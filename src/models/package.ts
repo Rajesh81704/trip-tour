@@ -1,0 +1,121 @@
+import mongoose, { Document } from "mongoose";
+
+interface IPackage extends Document {
+	title: string;
+	location: {
+		city: string;
+		state: string;
+		destination: string;
+	};
+	duration: string;
+	price: number;
+	originalPrice: number;
+	rating: number;
+	reviews: number;
+	images: string[];
+	features: string[];
+	discount: number;
+	description: string;
+	highlights: string[];
+	itinerary: {
+		day: number;
+		title: string;
+		description: string;
+	}[];
+	inclusions: string[];
+	exclusions: string[];
+	category: string;
+}
+
+const packageSchema = new mongoose.Schema<IPackage>(
+	{
+		title: {
+			type: String,
+			required: true,
+		},
+		location: {
+			city: {
+				type: String,
+				required: true,
+			},
+			state: {
+				type: String,
+				required: true,
+			},
+			destination: {
+				type: String,
+				required: true,
+			},
+		},
+		duration: {
+			type: String,
+			required: true,
+		},
+		price: {
+			type: Number,
+			required: true,
+		},
+		originalPrice: {
+			type: Number,
+			required: true,
+		},
+		rating: {
+			type: Number,
+			required: true,
+		},
+		reviews: {
+			type: Number,
+			required: true,
+		},
+		images: {
+			type: [String],
+			required: true,
+		},
+		features: {
+			type: [String],
+			required: true,
+		},
+		discount: {
+			type: Number,
+			required: true,
+		},
+		description: {
+			type: String,
+			required: true,
+		},
+		highlights: {
+			type: [String],
+			required: true,
+		},
+		itinerary: {
+			type: [
+				{
+					day: {
+						type: Number,
+						required: true,
+					},
+					title: {
+						type: String,
+						required: true,
+					},
+					description: {
+						type: String,
+						required: true,
+					},
+				},
+			],
+		},
+		inclusions: {
+			type: [String],
+			required: true,
+		},
+		exclusions: {
+			type: [String],
+			required: true,
+		},
+	},
+	{ timestamps: true },
+);
+
+const PackageModel = mongoose.models.Package || mongoose.model("Package", packageSchema);
+export { PackageModel };
