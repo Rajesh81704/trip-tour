@@ -1,3 +1,78 @@
+# Travel Agency Backend
+
+## Project Structure
+
+```
+backend/
+├── src/
+│   ├── config/             # DB, logger, CORS setup
+│   │   ├── config.ts
+│   │   ├── db.ts
+│   │   └── multer.ts
+│   ├── controllers/        # Thin route logic
+│   ├── middlewares/        # Auth, error handling, validation
+│   │   └── error-handler.ts
+│   ├── models/             # Mongoose schemas
+│   ├── routes/             # Express routers by module
+│   ├── types/              # TypeScript type definitions
+│   │   ├── env.d.ts
+│   │   ├── file.d.ts
+│   │   └── user.d.ts
+│   ├── utils/              # Reusable functions
+│   │   └── cloudinary.ts
+│   └── app.ts              # Main express app (mounted routes, middlewares)
+├── node_modules/           # Dependencies
+├── .env
+├── .gitignore
+├── .prettierrc
+├── eslint.config.js
+├── package.json
+├── package-lock.json
+├── readme.md
+└── tsconfig.json
+```
+
+## Description
+
+This is a TypeScript-based Express.js backend for a travel agency application.
+
+## Technologies Used
+
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **TypeScript** - Type-safe JavaScript
+- **MongoDB** - Database
+- **Mongoose** - MongoDB ODM
+- **Cloudinary** - Image storage and management
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+
+## Getting Started
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Set up environment variables:
+   - Copy `.env.example` to `.env`
+   - Fill in your configuration values
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Project Architecture
+
+- **config/**: Configuration files for database, middleware setup
+- **controllers/**: Business logic handlers for routes
+- **middlewares/**: Custom middleware functions
+- **models/**: Database schema definitions
+- **routes/**: API route definitions
+- **types/**: TypeScript type definitions
+- **utils/**: Helper functions and utilities
+
 # 🚀 Backend API Reference
 
 > RESTful API built with **Node.js**, **Express**, **MongoDB**, and **Mongoose**
