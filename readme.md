@@ -1,8 +1,3 @@
-Here is the complete `README.md` code, formatted in Markdown and ready to paste directly into your repository:
-
----
-
-````md
 # 🚀 Backend API Reference
 
 > RESTful API built with **Node.js**, **Express**, **MongoDB**, and **Mongoose**
@@ -43,7 +38,6 @@ interface IUser {
 	avatar: string;
 }
 ```
-````
 
 ---
 
