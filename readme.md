@@ -202,14 +202,3 @@ interface ICallbackRequest {
 | `POST` | `/api/reviews`     | Submit a review          |
 | `GET`  | `/api/reviews`     | Get all reviews          |
 | `GET`  | `/api/reviews/:id` | Get review by package ID |
-
----
-
-> ✅ Need help generating Postman collections, Swagger docs, or setting up CI/CD for this backend? Let me know!
-
-```
-
----
-
-Let me know if you want me to generate this into an actual `.md` file you can download.
-```
