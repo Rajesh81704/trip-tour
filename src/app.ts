@@ -1,11 +1,15 @@
-import express, { type Request, type Response } from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import { connectDB } from "@/config/db";
-import { v2 as cloudinary } from "cloudinary";
-import { userRouter } from "@/routes/user";
-import { errorHandler } from "@/middlewares/error-handler";
 import { config } from "@/config/config";
+import { connectDB } from "@/config/db";
+import { errorHandler } from "@/middlewares/error-handler";
+
+import authRouter from "@/routes/auth.route";
+import packageRouter from "@/routes/package.route";
+import userRouter from "@/routes/user.route";
+
+import { v2 as cloudinary } from "cloudinary";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { type Request, type Response } from "express";
 
 const app = express();
 
@@ -34,6 +38,8 @@ app.get("/", (_req: Request, res: Response) => {
 });
 
 app.use("/user", userRouter);
+app.use("/auth", authRouter);
+app.use("/package", packageRouter);
 
 app.use(errorHandler);
 
