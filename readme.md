@@ -1,6 +1,6 @@
 # Travel Agency Backend
 
-## Project Structure
+## Project Structure ✅
 
 ```
 backend/
@@ -50,11 +50,13 @@ This is a TypeScript-based Express.js backend for a travel agency application.
 ## Getting Started
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 
 2. Set up environment variables:
+
    - Copy `.env.example` to `.env`
    - Fill in your configuration values
 
