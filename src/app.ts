@@ -10,6 +10,7 @@ import { v2 as cloudinary } from "cloudinary";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
+import passport from "@/config/passport";
 
 const app = express();
 
@@ -32,6 +33,8 @@ cloudinary.config({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(passport.initialize());
+// app.use(passport.session()); // Uncomment if you are using sessions
 
 app.get("/", (_req: Request, res: Response) => {
 	res.status(200).send("This app was created using npx create-types-backend@latest !");
