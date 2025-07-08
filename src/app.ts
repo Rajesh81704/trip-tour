@@ -11,6 +11,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
 import passport from "@/config/passport";
+import inquiryFormRouter from "./routes/inquiryForm.route";
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.get("/", (_req: Request, res: Response) => {
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
 app.use("/package", packageRouter);
+app.use("/api/inquiry", inquiryFormRouter);
 
 app.use(errorHandler);
 
