@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { InquiryForm, InquiryFormModel } from "@/models/inquiryForm.model";
 import { ErrorHandler } from "@/middlewares/error-handler";
+import mongoose from "mongoose";
 
 export const createInquiryFormRequest = async (req: Request, res: Response): Promise<void> => {
 	try {
@@ -43,6 +44,13 @@ export const getInquiryFormRequests = async (_req: Request, res: Response): Prom
 	try {
 		const inquiries = await InquiryFormModel.find().sort({ createdAt: -1 });
 
+		if (!inquiries || inquiries.length === 0) {
+			res.status(404).json({
+				success: false,
+				message: "No inquiries found.",
+			});
+		}
+
 		res.status(200).json({
 			success: true,
 			data: inquiries,
@@ -65,6 +73,14 @@ export const deleteInquiryFormRequest = async (req: Request, res: Response): Pro
 		const inquiry = await InquiryFormModel.findByIdAndDelete(id);
 		if (!inquiry) {
 			throw new ErrorHandler(404, "Inquiry not found.");
+		}
+
+		if (!mongoose.Types.ObjectId.isValid(id)) {
+			res.status(400).json({
+				success: false,
+				message: "Invalid ID format",
+			});
+			return;
 		}
 		res.status(200).json({
 			success: true,

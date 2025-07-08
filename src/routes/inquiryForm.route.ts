@@ -24,7 +24,7 @@ inquiryFormRouter.get("/", getInquiryFormRequests);
 /**
  * @route   DELETE /:id /api/inquiry/:id
  * @desc    Delete an inquiry form request by ID
- * @access  Public
+ * @access  admin
  */
 inquiryFormRouter.delete("/:id", deleteInquiryFormRequest);
 
