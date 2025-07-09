@@ -43,7 +43,7 @@ app.get("/", (_req: Request, res: Response) => {
 
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
-app.use("/package", packageRouter);
+app.use("/api/packages", packageRouter);
 app.use("/api/inquiry", inquiryFormRouter);
 
 app.use(errorHandler);

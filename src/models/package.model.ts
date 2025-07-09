@@ -7,7 +7,10 @@ interface IPackage extends Document {
 		state: string;
 		destination: string;
 	};
-	duration: string;
+	duration: {
+		day: number;
+		night: number;
+	};
 	price: number;
 	originalPrice: number;
 	rating: number;
@@ -48,8 +51,13 @@ const packageSchema = new mongoose.Schema<IPackage>(
 			},
 		},
 		duration: {
-			type: String,
-			required: true,
+			day: {
+				type: Number,
+				required: true,
+			},
+			night: {
+				type: Number,
+			},
 		},
 		price: {
 			type: Number,
@@ -65,7 +73,6 @@ const packageSchema = new mongoose.Schema<IPackage>(
 		},
 		reviews: {
 			type: Number,
-			required: true,
 		},
 		images: {
 			type: [String],
@@ -118,4 +125,4 @@ const packageSchema = new mongoose.Schema<IPackage>(
 );
 
 const PackageModel = mongoose.models.Package || mongoose.model("Package", packageSchema);
-export { PackageModel };
+export { PackageModel, IPackage };
