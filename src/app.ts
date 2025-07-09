@@ -13,6 +13,7 @@ import express, { type Request, type Response } from "express";
 import passport from "@/config/passport";
 import inquiryFormRouter from "./routes/inquiryForm.route";
 import b2bRouter from "./routes/b2b.route";
+import contactRouter from "./routes/contact.route";
 
 const app = express();
 
@@ -38,17 +39,17 @@ app.use(cookieParser());
 app.use(passport.initialize());
 // app.use(passport.session()); // Uncomment if you are using sessions
 
-app.get("/", (_req: Request, res: Response) => {
-	res.status(200).send("This app was created using npx create-types-backend@latest !");
+app.get("/health", (_req: Request, res: Response) => {
+	res.status(200).json({ message: "Server is healthy" });
 });
 
+app.use(errorHandler);
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
 app.use("/api/packages", packageRouter);
 app.use("/api/inquiry", inquiryFormRouter);
 app.use("/api/b2b", b2bRouter);
-
-app.use(errorHandler);
+app.use("/api/contact", contactRouter);
 
 const PORT = Number(config.port) || 8000;
 app.listen(PORT, () => {
