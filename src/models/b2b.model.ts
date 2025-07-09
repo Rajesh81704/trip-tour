@@ -17,8 +17,6 @@ interface IB2B extends Document {
 	website: string;
 	message: string;
 	inquiryType: InquiryType;
-	createdAt: Date;
-	updatedAt: Date;
 }
 
 const b2bSchema = new mongoose.Schema<IB2B>(
@@ -57,4 +55,4 @@ const b2bSchema = new mongoose.Schema<IB2B>(
 );
 
 const B2BModel = mongoose.models.B2B || mongoose.model("B2B", b2bSchema);
-export { B2BModel };
+export { B2BModel, IB2B };

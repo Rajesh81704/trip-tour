@@ -12,6 +12,7 @@ import cors from "cors";
 import express, { type Request, type Response } from "express";
 import passport from "@/config/passport";
 import inquiryFormRouter from "./routes/inquiryForm.route";
+import b2bRouter from "./routes/b2b.route";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/user", userRouter);
 app.use("/auth", authRouter);
 app.use("/api/packages", packageRouter);
 app.use("/api/inquiry", inquiryFormRouter);
+app.use("/api/b2b", b2bRouter);
 
 app.use(errorHandler);
 
