@@ -56,8 +56,8 @@ export const register = async (req: Request, res: Response) => {
 		if (existingUser) {
 			return res.status(400).json({ message: "User already exists" });
 		}
-		const hashedPassword = await bcrypt.hash(password, 10);
 		const avatar = `https://ui-avatars.com/api/?name=${name}&background=random`;
+		const hashedPassword = await bcrypt.hash(password, 12);
 		const user = await UserModel.create({ name, email, password: hashedPassword, avatar });
 		const payload = {
 			id: user._id,
@@ -68,7 +68,19 @@ export const register = async (req: Request, res: Response) => {
 		const token = jwt.sign(payload, config.jwtSecret as string, {
 			expiresIn: "7d",
 		});
-		res.status(201).json({ message: "User created successfully", user, token });
+		const userWithoutPassword = {
+			_id: user._id,
+			name: user.name,
+			email: user.email,
+			avatar: user.avatar,
+		};
+		res.cookie("token", token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === "production",
+			sameSite: "strict",
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		});
+		res.status(201).json({ message: "User created successfully", user: userWithoutPassword });
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: "Internal server error" });
@@ -93,11 +105,11 @@ export const login = async (req: Request, res: Response) => {
 		if (password.length < 8) {
 			return res.status(400).json({ message: "Password must be at least 8 characters long" });
 		}
-		const user = await UserModel.findOne({ email });
+		const user = await UserModel.findOne({ email }).select("+password");
 		if (!user) {
 			return res.status(401).json({ message: "Invalid credentials" });
 		}
-		const isPasswordValid = await bcrypt.compare(password, user.password);
+		const isPasswordValid = await bcrypt.compare(String(password), String(user.password));
 		if (!isPasswordValid) {
 			return res.status(401).json({ message: "Invalid credentials" });
 		}
@@ -110,7 +122,20 @@ export const login = async (req: Request, res: Response) => {
 		const token = jwt.sign(payload, config.jwtSecret as string, {
 			expiresIn: "7d",
 		});
-		res.status(200).json({ message: "Login successful", user, token });
+
+		const userWithoutPassword = {
+			_id: user._id,
+			name: user.name,
+			email: user.email,
+			avatar: user.avatar,
+		};
+		res.cookie("token", token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === "production",
+			sameSite: "strict",
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		});
+		res.status(200).json({ message: "Login successful", user: userWithoutPassword });
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: "Internal server error" });
