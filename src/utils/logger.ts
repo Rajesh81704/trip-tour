@@ -1,5 +1,14 @@
+import type { Request, Response, NextFunction } from "express";
 import winston from "winston";
 import path from "path";
+
+const ANSI_COLORS = {
+	reset: "\x1b[0m",
+	method: "\x1b[36m",
+	route: "\x1b[35m",
+	ms: "\x1b[33m",
+	status: "\x1b[32m",
+};
 
 const levels = {
 	error: 0,
@@ -34,14 +43,12 @@ const transports = [
 		),
 	}),
 
-	// Error log file
 	new winston.transports.File({
 		filename: path.join("logs", "error.log"),
 		level: "error",
 		format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
 	}),
 
-	// Combined log file
 	new winston.transports.File({
 		filename: path.join("logs", "combined.log"),
 		format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
@@ -53,3 +60,17 @@ export const logger = winston.createLogger({
 	levels,
 	transports,
 });
+
+export function loggerMiddleware(req: Request, res: Response, next: NextFunction) {
+	const start = process.hrtime.bigint();
+	res.on("finish", () => {
+		const end = process.hrtime.bigint();
+		const latencyMs = Number(end - start) / 1_000_000;
+		const method = `${ANSI_COLORS.method}${req.method}${ANSI_COLORS.reset}`;
+		const route = `${ANSI_COLORS.route}${req.originalUrl}${ANSI_COLORS.reset}`;
+		const ms = `${ANSI_COLORS.ms}${latencyMs.toFixed(2)} ms${ANSI_COLORS.reset}`;
+		const status = `${ANSI_COLORS.status}${res.statusCode}${ANSI_COLORS.reset}`;
+		logger.info(`[${method}] ${route} - ${status} - ${ms}`);
+	});
+	next();
+}

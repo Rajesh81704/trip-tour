@@ -56,7 +56,6 @@ This is a TypeScript-based Express.js backend for a travel agency application.
    ```
 
 2. Set up environment variables:
-
    - Copy `.env.example` to `.env`
    - Fill in your configuration values
 
@@ -93,14 +92,12 @@ This document provides a clear and consistent reference for your backend routes 
 
 ## 🔐 Auth Routes
 
-| Method | Route                         | Description          |
-| ------ | ----------------------------- | -------------------- |
-| `POST` | `/api/auth/register`          | Register new user    |
-| `POST` | `/api/auth/login`             | Login user           |
-| `GET`  | `/api/auth/google`            | Google OAuth start   |
-| `GET`  | `/api/auth/facebook`          | Facebook OAuth start |
-| `POST` | `/api/auth/callback/google`   | Google callback      |
-| `POST` | `/api/auth/callback/facebook` | Facebook callback    |
+| Method | Route                       | Description        |
+| ------ | --------------------------- | ------------------ |
+| `POST` | `/api/auth/register`        | Register new user  |
+| `POST` | `/api/auth/login`           | Login user         |
+| `GET`  | `/api/auth/google`          | Google OAuth start |
+| `GET`  | `/api/auth/callback/google` | Google callback    |
 
 ---
 
@@ -115,6 +112,17 @@ interface IUser {
 	avatar: string;
 }
 ```
+
+## User Routes
+
+| Method   | Route            | Description         |
+| -------- | ---------------- | ------------------- |
+| `GET`    | `/api/users/me`  | Get current user    |
+| `PUT`    | `/api/users/me`  | Update current user |
+| `GET`    | `/api/users/:id` | Get user by ID      |
+| `PUT`    | `/api/users/:id` | Update user by ID   |
+| `DELETE` | `/api/users/:id` | Delete user by ID   |
+| `GET`    | `/api/users`     | Get all users       |
 
 ---
 
@@ -176,11 +184,11 @@ interface IPackage {
 
 ## 📨 Inquiry Routes
 
-| Method   | Route              | Description          |
-| -------- | ------------------ | -------------------- |
-| `POST`   | `/api/inquiry`     | Submit an inquiry    |
-| `GET`    | `/api/inquiry`     | Get all inquiries    |
-| `DELETE` | `/api/inquiry/:id` | Delete inquiry by ID |
+| Method   | Route                | Description          |
+| -------- | -------------------- | -------------------- |
+| `POST`   | `/api/inquiries`     | Submit an inquiry    |
+| `GET`    | `/api/inquiries`     | Get all inquiries    |
+| `DELETE` | `/api/inquiries/:id` | Delete inquiry by ID |
 
 ---
 

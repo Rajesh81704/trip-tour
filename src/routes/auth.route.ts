@@ -1,6 +1,6 @@
 import express from "express";
 import passport from "passport";
-import { googleAuth } from "@/controllers/auth.controller";
+import { google, register, login } from "@/controllers/auth.controller";
 const authRouter = express.Router();
 
 authRouter.get(
@@ -15,7 +15,10 @@ authRouter.get(
 		session: false,
 		scope: ["profile", "email"],
 	}),
-	googleAuth,
+	google,
 );
+
+authRouter.post("/register", register);
+authRouter.post("/login", login);
 
 export default authRouter;

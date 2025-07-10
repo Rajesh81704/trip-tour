@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "@/config/config";
-import { IUser } from "@/models/user.model";
+import { IUser, UserModel } from "@/models/user.model";
+import bcrypt from "bcrypt";
 
-export const googleAuth = (req: Request, res: Response) => {
+export const google = (req: Request, res: Response) => {
 	const user = req.user as IUser;
 	if (!user) {
 		return res.redirect("/login");
@@ -28,4 +29,90 @@ export const googleAuth = (req: Request, res: Response) => {
 	});
 
 	res.redirect("/");
+};
+
+export const register = async (req: Request, res: Response) => {
+	try {
+		const { name, email, password } = req.body;
+		if (!name || !email || !password) {
+			return res.status(400).json({ message: "All fields are required" });
+		}
+		if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string") {
+			return res.status(400).json({ message: "Invalid data types" });
+		}
+		if (password.length < 8) {
+			return res.status(400).json({ message: "Password must be at least 8 characters long" });
+		}
+		if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
+			return res.status(400).json({ message: "Invalid email format" });
+		}
+		if (name.length < 2 || name.length > 50) {
+			return res.status(400).json({ message: "Name must be between 2 and 50 characters" });
+		}
+		if (email.length < 5 || email.length > 100) {
+			return res.status(400).json({ message: "Email must be between 5 and 100 characters" });
+		}
+		const existingUser = await UserModel.findOne({ email });
+		if (existingUser) {
+			return res.status(400).json({ message: "User already exists" });
+		}
+		const hashedPassword = await bcrypt.hash(password, 10);
+		const avatar = `https://ui-avatars.com/api/?name=${name}&background=random`;
+		const user = await UserModel.create({ name, email, password: hashedPassword, avatar });
+		const payload = {
+			id: user._id,
+			email: user.email,
+			name: user.name,
+			avatar: avatar,
+		};
+		const token = jwt.sign(payload, config.jwtSecret as string, {
+			expiresIn: "7d",
+		});
+		res.status(201).json({ message: "User created successfully", user, token });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};
+
+export const login = async (req: Request, res: Response) => {
+	try {
+		const { email, password } = req.body;
+		if (!email || !password) {
+			return res.status(400).json({ message: "All fields are required" });
+		}
+		if (typeof email !== "string" || typeof password !== "string") {
+			return res.status(400).json({ message: "Invalid data types" });
+		}
+		if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
+			return res.status(400).json({ message: "Invalid email format" });
+		}
+		if (email.length < 5 || email.length > 100) {
+			return res.status(400).json({ message: "Email must be between 5 and 100 characters" });
+		}
+		if (password.length < 8) {
+			return res.status(400).json({ message: "Password must be at least 8 characters long" });
+		}
+		const user = await UserModel.findOne({ email });
+		if (!user) {
+			return res.status(401).json({ message: "Invalid credentials" });
+		}
+		const isPasswordValid = await bcrypt.compare(password, user.password);
+		if (!isPasswordValid) {
+			return res.status(401).json({ message: "Invalid credentials" });
+		}
+		const payload = {
+			id: user._id,
+			email: user.email,
+			name: user.name,
+			avatar: user.avatar,
+		};
+		const token = jwt.sign(payload, config.jwtSecret as string, {
+			expiresIn: "7d",
+		});
+		res.status(200).json({ message: "Login successful", user, token });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: "Internal server error" });
+	}
 };

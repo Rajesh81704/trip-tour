@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { B2BModel, IB2B } from "@/models/b2b.model";
-import { ErrorHandler } from "@/middlewares/error-handler";
+import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import mongoose from "mongoose";
 
 export const getB2B = async (_req: Request, res: Response) => {

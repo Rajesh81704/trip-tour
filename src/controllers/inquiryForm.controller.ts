@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { InquiryForm, InquiryFormModel } from "@/models/inquiryForm.model";
-import { ErrorHandler } from "@/middlewares/error-handler";
+import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import mongoose from "mongoose";
 
 export const createInquiryFormRequest = async (req: Request, res: Response): Promise<void> => {

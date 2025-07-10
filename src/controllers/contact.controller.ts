@@ -1,4 +1,4 @@
-import { ErrorHandler } from "@/middlewares/error-handler";
+import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import { ContactModel, IContact } from "@/models/contact.model";
 import { Request, Response } from "express";
 import mongoose from "mongoose";

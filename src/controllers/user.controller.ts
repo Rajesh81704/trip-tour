@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { ErrorHandler } from "@/middlewares/error-handler";
+import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import { IUser, UserModel } from "@/models/user.model";
 
 async function getUser(req: Request, res: Response) {
