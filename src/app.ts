@@ -9,11 +9,12 @@ import userRouter from "@/routes/user.route";
 import { v2 as cloudinary } from "cloudinary";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { type Request, type Response } from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import passport from "@/config/passport";
-import inquiryFormRouter from "./routes/inquiryForm.route";
-import b2bRouter from "./routes/b2b.route";
-import contactRouter from "./routes/contact.route";
+import inquiryFormRouter from "@/routes/inquiryForm.route";
+import b2bRouter from "@/routes/b2b.route";
+import contactRouter from "@/routes/contact.route";
+import { logger } from "@/utils/logger";
 
 const app = express();
 
@@ -27,6 +28,11 @@ app.use(
 	}),
 );
 
+app.use(function (req: Request, _res: Response, next: NextFunction) {
+	logger.info(`${req.method} ${req.url}`);
+	next();
+});
+
 cloudinary.config({
 	cloud_name: config.cloudinaryName,
 	api_key: config.cloudinaryApiKey,
@@ -37,21 +43,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
-// app.use(passport.session()); // Uncomment if you are using sessions
 
 app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).json({ message: "Server is healthy" });
 });
 
 app.use(errorHandler);
-app.use("/user", userRouter);
+app.use("/users", userRouter);
 app.use("/auth", authRouter);
-app.use("/api/packages", packageRouter);
-app.use("/api/inquiry", inquiryFormRouter);
-app.use("/api/b2b", b2bRouter);
-app.use("/api/contact", contactRouter);
+app.use("/packages", packageRouter);
+app.use("/inquiries", inquiryFormRouter);
+app.use("/b2b-requests", b2bRouter);
+app.use("/contacts", contactRouter);
 
 const PORT = Number(config.port) || 8000;
+
 app.listen(PORT, () => {
-	console.log(`Server is running on http://localhost:${PORT}`);
+	logger.info(`Server is running on http://localhost:${PORT}`);
 });

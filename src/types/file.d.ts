@@ -1,4 +1,4 @@
 interface FileProps {
-  mimetype: string;
-  buffer: Buffer;
+	mimetype: string;
+	buffer: Buffer;
 }

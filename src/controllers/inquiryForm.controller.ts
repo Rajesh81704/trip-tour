@@ -8,7 +8,6 @@ export const createInquiryFormRequest = async (req: Request, res: Response): Pro
 		const { name, mobileNumber, email, destination, message } = req.body;
 		if (!name || !mobileNumber || !email || !destination || !message) {
 			throw new ErrorHandler(400, "All fields are required.");
-			return;
 		}
 
 		if (!/^\d{10}$/.test(mobileNumber)) {
@@ -80,7 +79,6 @@ export const deleteInquiryFormRequest = async (req: Request, res: Response): Pro
 				success: false,
 				message: "Invalid ID format",
 			});
-			return;
 		}
 		res.status(200).json({
 			success: true,

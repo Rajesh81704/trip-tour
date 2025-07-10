@@ -92,7 +92,6 @@ const getAllPackages = async (_req: Request, res: Response): Promise<void> => {
 		const packages = await PackageModel.find();
 		if (!packages || packages.length === 0) {
 			throw new ErrorHandler(404, "No packages found");
-			return;
 		}
 
 		res.status(200).json({

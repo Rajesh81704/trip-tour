@@ -52,7 +52,7 @@ export const createContact = async (req: Request, res: Response) => {
 	}
 };
 
-export const getAllContacts = async (req: Request, res: Response) => {
+export const getAllContacts = async (_req: Request, res: Response) => {
 	try {
 		const contacts = await ContactModel.find().sort({ createdAt: -1 });
 		if (!contacts || contacts.length === 0) {

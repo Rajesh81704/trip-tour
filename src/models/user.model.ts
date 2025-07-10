@@ -1,37 +1,52 @@
 import mongoose, { Document } from "mongoose";
 import bcrypt from "bcrypt";
 
-interface IUser extends Document {
+export interface IUser extends Document {
 	name: string;
 	username: string;
 	password: string;
 	email: string;
 	avatar: string;
+	googleId: string;
+	googleAccessToken: string;
+	googleRefreshToken: string;
 }
 
 const userSchema = new mongoose.Schema<IUser>(
 	{
 		name: {
 			type: String,
-			required: true,
+			required: false,
 		},
 		username: {
 			type: String,
-			required: true,
+			required: false,
 			unique: true,
 		},
 		email: {
 			type: String,
-			required: true,
+			required: false,
 			unique: true,
+		},
+		googleId: {
+			type: String,
+			required: false,
+		},
+		googleAccessToken: {
+			type: String,
+			required: false,
+		},
+		googleRefreshToken: {
+			type: String,
+			required: false,
 		},
 		avatar: {
 			type: String,
-			required: true,
+			required: false,
 		},
 		password: {
 			type: String,
-			required: true,
+			required: false,
 			select: false,
 		},
 	},

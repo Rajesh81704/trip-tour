@@ -3,7 +3,7 @@ import { B2BModel, IB2B } from "@/models/b2b.model";
 import { ErrorHandler } from "@/middlewares/error-handler";
 import mongoose from "mongoose";
 
-export const getB2B = async (req: Request, res: Response) => {
+export const getB2B = async (_req: Request, res: Response) => {
 	try {
 		const b2bRequests = await B2BModel.find().sort({ createdAt: -1 });
 		if (!b2bRequests || b2bRequests.length === 0) {

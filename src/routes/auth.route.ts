@@ -1,29 +1,21 @@
 import express from "express";
 import passport from "passport";
-
+import { googleAuth } from "@/controllers/auth.controller";
 const authRouter = express.Router();
 
-authRouter.get("/google", passport.authenticate("google", { scope: ["profile"] }));
+authRouter.get(
+	"/google",
+	passport.authenticate("google", { session: false, scope: ["profile", "email"] }),
+);
 
 authRouter.get(
 	"/callback/google",
-	passport.authenticate("google", { failureRedirect: "/login" }),
-	function (req: express.Request, res: express.Response) {
-		console.log("Google authentication successful:", req, res);
-
-		res.redirect("/");
-	},
+	passport.authenticate("google", {
+		failureRedirect: "/login",
+		session: false,
+		scope: ["profile", "email"],
+	}),
+	googleAuth,
 );
 
-authRouter.get("/facebook", passport.authenticate("facebook"));
-
-authRouter.get(
-	"/callback/facebook",
-	passport.authenticate("facebook", { failureRedirect: "/login" }),
-	function (req: express.Request, res: express.Response) {
-		console.log("Facebook authentication successful:", req, res);
-
-		res.redirect("/");
-	},
-);
 export default authRouter;
