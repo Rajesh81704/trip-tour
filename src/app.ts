@@ -16,6 +16,7 @@ import contactRouter from "@/routes/contact.route";
 import inquiryFormRouter from "@/routes/inquiryForm.route";
 import packageRouter from "@/routes/package.route";
 import userRouter from "@/routes/user.route";
+import reviewRouter from "./routes/review.route";
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use("/packages", packageRouter);
 app.use("/inquiries", inquiryFormRouter);
 app.use("/b2b-requests", b2bRouter);
 app.use("/contacts", contactRouter);
+app.use("/reviews", reviewRouter);
 
 app.use(errorHandler);
 

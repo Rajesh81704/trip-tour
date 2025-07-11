@@ -1,4 +1,4 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { Document, Types } from "mongoose";
 
 interface IPackage extends Document {
 	title: string;
@@ -13,8 +13,8 @@ interface IPackage extends Document {
 	};
 	price: number;
 	originalPrice: number;
-	rating: number;
-	reviews: number;
+
+	reviews: Types.ObjectId[];
 	images: string[];
 	features: string[];
 	discount: number;
@@ -67,13 +67,11 @@ const packageSchema = new mongoose.Schema<IPackage>(
 			type: Number,
 			required: true,
 		},
-		rating: {
-			type: Number,
-			required: true,
-		},
-		reviews: {
-			type: Number,
-		},
+
+		reviews: [{
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Review",
+		}],
 		images: {
 			type: [String],
 			required: true,

@@ -10,7 +10,6 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 		duration,
 		price,
 		originalPrice,
-		rating,
 		reviews,
 		images,
 		features,
@@ -28,8 +27,6 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 		!duration ||
 		!price ||
 		!originalPrice ||
-		!rating ||
-		!reviews ||
 		!images ||
 		!features ||
 		!discount ||
@@ -48,9 +45,6 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 	if (typeof originalPrice !== "number" || originalPrice < 0) {
 		throw new ErrorHandler(400, "Original price must be a positive number");
 	}
-	if (typeof rating !== "number" || rating < 0 || rating > 5) {
-		throw new ErrorHandler(400, "Rating must be between 0 and 5");
-	}
 
 	try {
 		const newPackage = await PackageModel.create({
@@ -59,7 +53,7 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 			duration,
 			price,
 			originalPrice,
-			rating,
+
 			reviews,
 			images,
 			features,
@@ -122,19 +116,24 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 	}
 
 	try {
-		const packageData = await PackageModel.findById(packageId);
+		const packageData = await PackageModel.findById(packageId).lean();
 
 		if (!packageData) {
 			throw new ErrorHandler(404, "Package not found");
 		}
 
-		if (packageData.isDeleted) {
-			throw new ErrorHandler(410, "Package has been deleted");
-		}
+		// if (packageData.isDeleted) {
+		// 	throw new ErrorHandler(410, "Package has been deleted");
+		// }
+
+		// Fetch all reviews for this package
+		const { default: ReviewModel } = await import("../models/review.model");
+		const reviews = await ReviewModel.find({ package: packageId }).populate("user", "name email").sort({ createdAt: -1 });
 
 		res.status(200).json({
 			success: true,
 			package: packageData,
+			reviews,
 		});
 	} catch (error) {
 		if (error instanceof Error) {
