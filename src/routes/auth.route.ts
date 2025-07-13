@@ -1,6 +1,6 @@
 import express from "express";
 import passport from "passport";
-import { google, register, login, adminLogin } from "@/controllers/auth.controller";
+import { google, register, login, adminLogin, adminLogout } from "@/controllers/auth.controller";
 const authRouter = express.Router();
 
 authRouter.get(
@@ -20,6 +20,8 @@ authRouter.get(
 
 authRouter.post("/register", register);
 authRouter.post("/login", login);
+
 authRouter.post("/admin/login", adminLogin);
+authRouter.post("/admin/logout", adminLogout);
 
 export default authRouter;
