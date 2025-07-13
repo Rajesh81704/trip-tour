@@ -17,6 +17,9 @@ import inquiryFormRouter from "@/routes/inquiryForm.route";
 import packageRouter from "@/routes/package.route";
 import userRouter from "@/routes/user.route";
 import reviewRouter from "./routes/review.route";
+import adminRouter from "./routes/admin.route";
+// import { AdminModel } from "./models/admin.model";
+// import bcrypt from "bcrypt";
 
 const app = express();
 
@@ -62,13 +65,25 @@ app.use("/inquiries", inquiryFormRouter);
 app.use("/b2b-requests", b2bRouter);
 app.use("/contacts", contactRouter);
 app.use("/reviews", reviewRouter);
+app.use("/admin", adminRouter);
 
 app.use(errorHandler);
 
 const PORT = Number(config.port) || 8000;
 
+// const createAdminDummy = async () => {
+// 	const admin = new AdminModel({
+// 		email: "admin@admin.com",
+// 		username: "admin",
+// 		password: bcrypt.hashSync("admin@123", 12),
+// 		name: "Admin",
+// 	});
+// 	admin.save();
+// };
+
 connectDB()
 	.then(() => {
+		// createAdminDummy();
 		app.listen(PORT, () => {
 			logger.info(`Server is running on http://localhost:${PORT}`);
 		});

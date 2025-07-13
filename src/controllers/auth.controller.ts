@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { config } from "@/config/config";
 import { IUser, UserModel } from "@/models/user.model";
 import bcrypt from "bcrypt";
+import { AdminModel } from "@/models/admin.model";
 
 export const google = (req: Request, res: Response) => {
 	const user = req.user as IUser;
@@ -136,6 +137,67 @@ export const login = async (req: Request, res: Response) => {
 			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 		res.status(200).json({ message: "Login successful", user: userWithoutPassword });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: "Internal server error" });
+	}
+};
+
+export const adminLogin = async (req: Request, res: Response) => {
+	try {
+		const { identifier, password } = req.body;
+
+		if (!identifier || !password) {
+			return res.status(400).json({ message: "Identifier and password are required" });
+		}
+
+		if (typeof identifier !== "string" || typeof password !== "string") {
+			return res.status(400).json({ message: "Invalid data types" });
+		}
+
+		const query: Record<string, string> = {};
+		const emailRegex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
+		if (emailRegex.test(identifier)) {
+			if (identifier.length < 5 || identifier.length > 100) {
+				return res.status(400).json({ message: "Email must be between 5 and 100 characters" });
+			}
+			query.email = identifier;
+		} else {
+			if (identifier.length < 3 || identifier.length > 50) {
+				return res.status(400).json({ message: "Username must be between 3 and 50 characters" });
+			}
+			query.username = identifier;
+		}
+
+		if (password.length < 8) {
+			return res.status(400).json({ message: "Password must be at least 8 characters long" });
+		}
+
+		const admin = await AdminModel.findOne(query).select("+password");
+		if (!admin) {
+			return res.status(401).json({ message: "Invalid credentials" });
+		}
+		const isPasswordValid = await bcrypt.compare(String(password), String(admin.password));
+		if (!isPasswordValid) {
+			return res.status(401).json({ message: "Invalid credentials" });
+		}
+
+		const payload = {
+			id: admin._id,
+			email: admin.email,
+			username: admin.username,
+			name: admin.name,
+		};
+		const token = jwt.sign(payload, config.jwtSecret as string, {
+			expiresIn: "7d",
+		});
+		res.cookie("adminToken", token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === "production",
+			sameSite: "strict",
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		});
+		res.status(200).json({ message: "Admin login successful" });
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: "Internal server error" });
