@@ -1,8 +1,6 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 interface IReview extends Document {
-	crtDate: any;
-	createdAt: Date;
 	rating: number;
 	review: string;
 	user: Types.ObjectId;

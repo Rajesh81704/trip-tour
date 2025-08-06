@@ -3,6 +3,19 @@ import { v4 as uuid } from "uuid";
 import sharp from "sharp";
 import streamifier from "streamifier";
 import { logger } from "@/utils/logger";
+import { config } from "@/config/config";
+
+// Configure cloudinary
+if (!config.cloudinaryName || !config.cloudinaryApiKey || !config.cloudinarySecret) {
+	logger.error("Missing Cloudinary configuration. Please check your environment variables.");
+	throw new Error("Cloudinary configuration is incomplete");
+}
+
+cloudinary.config({
+	cloud_name: config.cloudinaryName,
+	api_key: config.cloudinaryApiKey,
+	api_secret: config.cloudinarySecret,
+});
 
 interface ReturnTypes {
 	public_id: string | null;
@@ -14,7 +27,7 @@ interface CloudinaryUploadResult {
 	secure_url: string;
 }
 
-const uploadToCloudinary = async (file: FileProps): Promise<ReturnTypes> => {
+const uploadToCloudinary = async (file: Express.Multer.File): Promise<ReturnTypes> => {
 	if (!file || !file.buffer) {
 		return {
 			public_id: null,
@@ -23,14 +36,12 @@ const uploadToCloudinary = async (file: FileProps): Promise<ReturnTypes> => {
 	}
 
 	try {
-		// sharp accepts Buffer as input and returns a Buffer (compressed) as output
 		const compressedBuffer = await sharp(file.buffer)
 			.resize({ width: 200 })
 			.png({ quality: 70 })
 			.toBuffer();
 
 		const uploadFromBuffer = (buffer: Buffer): Promise<CloudinaryUploadResult> => {
-			// uploadFromBuffer function returns uploadPromise
 			return new Promise((resolve, reject) => {
 				const uploadImage = cloudinary.uploader.upload_stream(
 					{
@@ -45,13 +56,10 @@ const uploadToCloudinary = async (file: FileProps): Promise<ReturnTypes> => {
 					},
 				);
 
-				// streamifier is used to convert the buffer into a stream
-				// and pipe it to the upload stream
 				streamifier.createReadStream(buffer).pipe(uploadImage);
 			});
 		};
 
-		// uploadFromBuffer function returns uploadPromise that resolves to the result of the upload
 		const result = await uploadFromBuffer(compressedBuffer);
 
 		return {

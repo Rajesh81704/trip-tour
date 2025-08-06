@@ -12,10 +12,11 @@ interface IPackage extends Document {
 		night: number;
 	};
 	price: number;
-	originalPrice: number;
-
 	reviews: Types.ObjectId[];
-	images: string[];
+	images: {
+		url: string;
+		public_id: string;
+	}[];
 	features: string[];
 	discount: number;
 	description: string;
@@ -63,25 +64,33 @@ const packageSchema = new mongoose.Schema<IPackage>(
 			type: Number,
 			required: true,
 		},
-		originalPrice: {
+		discount: {
 			type: Number,
 			required: true,
 		},
-
-		reviews: [{
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Review",
-		}],
+		reviews: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "Review",
+			},
+		],
 		images: {
-			type: [String],
+			type: [
+				{
+					url: {
+						type: String,
+						required: true,
+					},
+					public_id: {
+						type: String,
+						required: true,
+					},
+				},
+			],
 			required: true,
 		},
 		features: {
 			type: [String],
-			required: true,
-		},
-		discount: {
-			type: Number,
 			required: true,
 		},
 		description: {
@@ -116,6 +125,10 @@ const packageSchema = new mongoose.Schema<IPackage>(
 		},
 		exclusions: {
 			type: [String],
+			required: true,
+		},
+		category: {
+			type: String,
 			required: true,
 		},
 	},

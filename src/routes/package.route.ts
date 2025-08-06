@@ -8,6 +8,7 @@ import {
 	updatePackage,
 } from "@/controllers/package.controller";
 import express from "express";
+import { upload } from "@/middlewares/multer.middleware";
 
 const packageRouter = express.Router();
 
@@ -16,7 +17,7 @@ const packageRouter = express.Router();
  * @desc    Create a new package
  * @access  admin
  */
-packageRouter.post("/", createPackage);
+packageRouter.post("/", upload.array("images", 10), createPackage);
 /**
  * @route   GET / /api/packages
  * @desc    Get all packages
@@ -24,6 +25,21 @@ packageRouter.post("/", createPackage);
  */
 
 packageRouter.get("/", getAllPackages);
+
+/**
+ * @route   GET /popular /api/packages/popular
+ * @desc    Get popular packages
+ * @access  Public
+ */
+packageRouter.get("/popular", gettingPopularPackages);
+
+/**
+ * @route   GET /state/Rajasthan /api/packages/state/:state
+ * @desc    Get packages by state
+ * @access  Public
+ */
+packageRouter.get("/state/:state", getPackageByState);
+
 /**
  * @route   GET /:id /api/packages/:id
  * @desc    Get a package by ID
@@ -31,17 +47,11 @@ packageRouter.get("/", getAllPackages);
  */
 packageRouter.get("/:id", getPackageById);
 /**
- * @route   GET /state/Rajasthan /api/packages/state/:state
- * @desc    Get packages by state
- * @access  Public
- */
-packageRouter.get("/state/:state", getPackageByState);
-/**
  * @route   PUT /:id /api/packages/:id
  * @desc    Update a package by ID
  * @access  admin
  */
-packageRouter.put("/:id", updatePackage);
+packageRouter.put("/:id", upload.array("images", 10), updatePackage);
 /**
  * @route   DELETE /:id /api/packages/:id
  * @desc    Delete a package by ID
@@ -49,7 +59,5 @@ packageRouter.put("/:id", updatePackage);
  */
 
 packageRouter.delete("/:id", deletePackage);
-
-packageRouter.get("/popular", gettingPopularPackages);
 
 export default packageRouter;

@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 export const createReview = async (req: Request, res: Response) => {
 	try {
 		const { rating, review, applaud, package: packageId } = req.body;
-		const userId = (req.user as any)?._id;
+		const userId = (req.user as any)?.id;
 		if (!rating || !review || !packageId) {
 			return res.status(400).json({ message: "Missing required fields" });
 		}
