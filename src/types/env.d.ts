@@ -12,6 +12,7 @@ declare global {
 			JWT_SECRET: string;
 			GOOGLE_CLIENT_ID: string;
 			GOOGLE_CLIENT_SECRET: string;
+			HEALTH_CHECK_URL: string;
 		}
 	}
 }

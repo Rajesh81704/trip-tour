@@ -77,9 +77,22 @@ const PORT = Number(config.port) || 8000;
 // 	admin.save();
 // };
 
-cron.schedule("*/13 * * * *", async () => {
+// cron.schedule("*/13 * * * *", async () => {
+// 	try {
+// 		https.get(config.healthCheckUrl, (res) => {
+// 			logger.info("Health check response:", res.statusCode);
+// 			res.on("data", (chunk) => {
+// 				logger.info("Health check response:", chunk.toString());
+// 			});
+// 		});
+// 	} catch (error) {
+// 		logger.error("Health check failed:", error);
+// 	}
+// });
+
+cron.schedule("*/30 * * * * *", async () => {
 	try {
-		https.get(`https://www.google.com`, (res) => {
+		https.get(config.healthCheckUrl, (res) => {
 			logger.info("Health check response:", res.statusCode);
 			res.on("data", (chunk) => {
 				logger.info("Health check response:", chunk.toString());
