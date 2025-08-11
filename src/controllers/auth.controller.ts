@@ -204,7 +204,7 @@ export const adminLogin = async (req: Request, res: Response) => {
 	}
 };
 
-export const adminLogout = async (req: Request, res: Response) => {
+export const adminLogout = async (_req: Request, res: Response) => {
 	try {
 		res.clearCookie("adminToken");
 		res.status(200).json({ message: "Admin logout successful" });
