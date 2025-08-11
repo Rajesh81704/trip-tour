@@ -2,6 +2,7 @@ import mongoose, { Document, Types } from "mongoose";
 
 interface IPackage extends Document {
 	title: string;
+	description: string;
 	location: {
 		city: string;
 		state: string;
@@ -19,7 +20,6 @@ interface IPackage extends Document {
 	}[];
 	features: string[];
 	discount: number;
-	description: string;
 	highlights: string[];
 	itinerary: {
 		day: number;

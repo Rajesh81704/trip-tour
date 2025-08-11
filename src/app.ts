@@ -1,10 +1,7 @@
-import { v2 as cloudinary } from "cloudinary";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
-import fs from "fs";
-import path from "path";
 
 import { config } from "@/config/config";
 import { connectDB } from "@/config/db";
@@ -20,16 +17,13 @@ import packageRouter from "@/routes/package.route";
 import userRouter from "@/routes/user.route";
 import reviewRouter from "./routes/review.route";
 import adminRouter from "./routes/admin.route";
+import cron from "node-cron";
+import https from "https";
+
 // import { AdminModel } from "./models/admin.model";
 // import bcrypt from "bcrypt";
 
 const app = express();
-
-// Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadsDir)) {
-	fs.mkdirSync(uploadsDir, { recursive: true });
-}
 
 // 100 requests per 15 minutes per IP
 const limiter = rateLimit({
@@ -50,18 +44,9 @@ app.use(
 	}),
 );
 
-cloudinary.config({
-	cloud_name: config.cloudinaryName,
-	api_key: config.cloudinaryApiKey,
-	api_secret: config.cloudinarySecret,
-});
-
+app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// Serve static files from uploads directory
-app.use("/uploads", express.static("uploads"));
 
 app.use(passport.initialize());
 
@@ -91,6 +76,19 @@ const PORT = Number(config.port) || 8000;
 // 	});
 // 	admin.save();
 // };
+
+cron.schedule("*/13 * * * *", async () => {
+	try {
+		https.get(`https://www.google.com`, (res) => {
+			logger.info("Health check response:", res.statusCode);
+			res.on("data", (chunk) => {
+				logger.info("Health check response:", chunk.toString());
+			});
+		});
+	} catch (error) {
+		logger.error("Health check failed:", error);
+	}
+});
 
 connectDB()
 	.then(() => {

@@ -1,11 +1,10 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 interface IReview extends Document {
-	rating: number;
-	review: string;
 	user: Types.ObjectId;
-	applaud: number;
 	package: Types.ObjectId;
+	rating: number;
+	comment: string;
 }
 
 const reviewSchema = new Schema<IReview>(
@@ -20,7 +19,7 @@ const reviewSchema = new Schema<IReview>(
 				message: "{VALUE} is not an integer rating",
 			},
 		},
-		review: {
+		comment: {
 			type: String,
 			required: true,
 			trim: true,
@@ -30,11 +29,6 @@ const reviewSchema = new Schema<IReview>(
 			type: Schema.Types.ObjectId,
 			ref: "User",
 			required: true,
-		},
-		applaud: {
-			type: Number,
-			default: 0,
-			min: 0,
 		},
 		package: {
 			type: Schema.Types.ObjectId,
@@ -48,10 +42,6 @@ const reviewSchema = new Schema<IReview>(
 		toObject: { virtuals: true },
 	},
 );
-
-reviewSchema.virtual("crtDate").get(function (this: IReview) {
-	return this.createdAt;
-});
 
 const ReviewModel = mongoose.models.Review || mongoose.model<IReview>("Review", reviewSchema);
 export default ReviewModel;

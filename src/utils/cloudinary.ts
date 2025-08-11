@@ -1,21 +1,8 @@
-import { v2 as cloudinary } from "cloudinary";
+import { cloudinary } from "@/config/cloudinary";
 import { v4 as uuid } from "uuid";
 import sharp from "sharp";
 import streamifier from "streamifier";
 import { logger } from "@/utils/logger";
-import { config } from "@/config/config";
-
-// Configure cloudinary
-if (!config.cloudinaryName || !config.cloudinaryApiKey || !config.cloudinarySecret) {
-	logger.error("Missing Cloudinary configuration. Please check your environment variables.");
-	throw new Error("Cloudinary configuration is incomplete");
-}
-
-cloudinary.config({
-	cloud_name: config.cloudinaryName,
-	api_key: config.cloudinaryApiKey,
-	api_secret: config.cloudinarySecret,
-});
 
 interface ReturnTypes {
 	public_id: string | null;

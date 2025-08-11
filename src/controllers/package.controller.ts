@@ -41,7 +41,6 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 		}
 	}
 
-	// Parse JSON strings to objects/arrays
 	let parsedLocation,
 		parsedDuration,
 		parsedFeatures,
@@ -88,7 +87,6 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 		throw new ErrorHandler(400, "At least one image is required");
 	}
 
-	// Validate required nested fields
 	if (!parsedLocation.city || !parsedLocation.state || !parsedLocation.destination) {
 		throw new ErrorHandler(400, "Location must include city, state, and destination");
 	}
@@ -170,11 +168,6 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 			throw new ErrorHandler(404, "Package not found");
 		}
 
-		// if (packageData.isDeleted) {
-		// 	throw new ErrorHandler(410, "Package has been deleted");
-		// }
-
-		// Fetch all reviews for this package
 		const { default: ReviewModel } = await import("../models/review.model");
 		const reviews = await ReviewModel.find({ package: packageId })
 			.populate("user", "name email")
