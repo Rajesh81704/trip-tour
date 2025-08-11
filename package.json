@@ -3,7 +3,6 @@
 	"version": "1.0.0",
 	"description": "an api for travel agency website",
 	"main": "dist/app.js",
-	"type": "module",
 	"scripts": {
 		"start": "node dist/app.js",
 		"build": "npm run lint && npm run format && tsc && tsc-alias",
