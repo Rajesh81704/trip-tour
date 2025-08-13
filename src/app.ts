@@ -1,7 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
-import rateLimit from "express-rate-limit";
+// import rateLimit from "express-rate-limit";
 
 import { config } from "@/config/config";
 import { connectDB } from "@/config/db";
@@ -35,13 +35,13 @@ import https from "https";
 const app = express();
 
 // 100 requests per 15 minutes per IP
-const limiter = rateLimit({
-	windowMs: 15 * 60 * 1000,
-	max: 100,
-	standardHeaders: true,
-	legacyHeaders: false,
-});
-app.use(limiter);
+// const limiter = rateLimit({
+// 	windowMs: 15 * 60 * 1000,
+// 	max: 100,
+// 	standardHeaders: true,
+// 	legacyHeaders: false,
+// });
+// app.use(limiter);
 
 app.use(loggerMiddleware);
 
