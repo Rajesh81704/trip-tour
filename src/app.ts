@@ -26,8 +26,8 @@ import packageRouter from "@/routes/package.route";
 import reviewRouter from "@/routes/review.route";
 import userRouter from "@/routes/user.route";
 
-// import cron from "node-cron";
-// import https from "https";
+import cron from "node-cron";
+import https from "https";
 
 // import { AdminModel } from "./models/admin.model";
 // import bcrypt from "bcrypt";
@@ -47,7 +47,7 @@ app.use(loggerMiddleware);
 
 app.use(
 	cors({
-		origin: [config.frontendUrlDev, config.frontendUrlProd],
+		origin: ["http://localhost:3000", "https://www.naturevacation.in", "https://naturevacation.in"],
 		methods: ["GET", "POST", "PUT", "DELETE"],
 		credentials: true,
 	}),
@@ -161,18 +161,18 @@ const PORT = Number(config.port) || 8000;
 // 	admin.save();
 // };
 
-// cron.schedule("*/13 * * * *", async () => {
-// 	try {
-// 		https.get(config.healthCheckUrl, (res) => {
-// 			logger.info("Health check response:", res.statusCode);
-// 			res.on("data", (chunk) => {
-// 				logger.info("Health check response:", chunk.toString());
-// 			});
-// 		});
-// 	} catch (error) {
-// 		logger.error("Health check failed:", error);
-// 	}
-// });
+cron.schedule("*/13 * * * *", async () => {
+	try {
+		https.get(config.healthCheckUrl, (res) => {
+			logger.info("Health check response:", res.statusCode);
+			res.on("data", (chunk) => {
+				logger.info("Health check response:", chunk.toString());
+			});
+		});
+	} catch (error) {
+		logger.error("Health check failed:", error);
+	}
+});
 
 // cron.schedule("*/30 * * * * *", async () => {
 // 	try {
