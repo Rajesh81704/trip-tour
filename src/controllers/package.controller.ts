@@ -220,8 +220,14 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 	const formData = req.body;
 	const updateData = { ...formData } as Partial<IPackage>;
 
+	// First get existing package to preserve images if no new ones uploaded
+	const existingPackage = await PackageModel.findById(packageId);
+	if (!existingPackage) {
+		throw new ErrorHandler(404, "Package not found");
+	}
+
 	// Handle image updates if files are present
-	if (req.files && Array.isArray(req.files)) {
+	if (req.files && Array.isArray(req.files) && req.files.length > 0) {
 		try {
 			const uploadPromises = req.files.map(async (file: Express.Multer.File) => {
 				const result = await uploadToCloudinary(file);
@@ -239,6 +245,9 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 		} catch {
 			throw new ErrorHandler(500, "Error uploading images to Cloudinary");
 		}
+	} else {
+		// Keep existing images if no new ones uploaded
+		updateData.images = existingPackage.images;
 	}
 
 	// Parse JSON strings to objects/arrays for complex fields
