@@ -47,7 +47,12 @@ app.use(loggerMiddleware);
 
 app.use(
 	cors({
-		origin: ["http://localhost:3000", "https://www.naturevacation.in", "https://naturevacation.in"],
+		origin: [
+			"http://localhost:3000",
+			"https://www.naturevacation.in",
+			"https://naturevacation.in",
+			"https://admin.naturevacation.in",
+		],
 		methods: ["GET", "POST", "PUT", "DELETE"],
 		credentials: true,
 	}),
