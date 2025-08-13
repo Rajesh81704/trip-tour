@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import ReviewModel from "../models/review.model";
+import { ReviewModel } from "../models/review.model";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import mongoose from "mongoose";
 
