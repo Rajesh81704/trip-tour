@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 
 export const createContact = async (req: Request, res: Response) => {
 	try {
-		const { name, email, subject, message } = req.body as IContact;
+		const { name, email, phone, subject, message } = req.body as IContact;
 		if (!name || !email || !subject || !message) {
 			throw new ErrorHandler(400, "All fields are required.");
 		}
@@ -34,6 +34,7 @@ export const createContact = async (req: Request, res: Response) => {
 			name,
 			email,
 			subject,
+			phone,
 			message,
 		});
 		if (!newContact) {

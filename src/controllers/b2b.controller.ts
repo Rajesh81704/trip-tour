@@ -24,19 +24,20 @@ export const getB2B = async (_req: Request, res: Response) => {
 
 export const CreateB2BRequest = async (req: Request, res: Response) => {
 	try {
-		const { companyName, name, email, phone, website, message, inquiryType } = req.body as IB2B;
+		const { companyName, email, phone, website, message, inquiryType, contactName } =
+			req.body as IB2B;
 
-		if (!companyName || !name || !email || !phone || !message || !inquiryType) {
+		if (!companyName || !email || !phone || !message || !inquiryType) {
 			return res.status(400).json({ message: "All fields are required." });
 		}
 
 		const newB2BRequest = await B2BModel.create({
 			companyName,
-			name,
 			email,
 			phone,
 			website,
 			message,
+			contactName,
 			inquiryType,
 		});
 

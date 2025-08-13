@@ -1,22 +1,22 @@
 import mongoose, { Document } from "mongoose";
 
-export enum InquiryType {
-	CorporatePackages = "Corporate Packages",
-	GroupTours = "Group Tours",
-	MICE = "MICE (Meetings, Incentives, Conferences, Events)",
-	CustomItineraries = "Custom Itineraries",
-	PartnershipOpportunities = "Partnership Opportunities",
-	Other = "Other",
-}
+// export enum InquiryType {
+// 	CorporatePackages = "Corporate Packages",
+// 	GroupTours = "Group Tours",
+// 	MICE = "MICE (Meetings, Incentives, Conferences, Events)",
+// 	CustomItineraries = "Custom Itineraries",
+// 	PartnershipOpportunities = "Partnership Opportunities",
+// 	Other = "Other",
+// }
 
 interface IB2B extends Document {
 	companyName: string;
-	name: string;
 	email: string;
 	phone: string;
 	website: string;
 	message: string;
-	inquiryType: InquiryType;
+	contactName?: string;
+	inquiryType: string;
 }
 
 const b2bSchema = new mongoose.Schema<IB2B>(
@@ -25,10 +25,7 @@ const b2bSchema = new mongoose.Schema<IB2B>(
 			type: String,
 			required: true,
 		},
-		name: {
-			type: String,
-			required: true,
-		},
+
 		email: {
 			type: String,
 			required: true,
@@ -45,9 +42,12 @@ const b2bSchema = new mongoose.Schema<IB2B>(
 			type: String,
 			required: true,
 		},
+		contactName: {
+			type: String,
+		},
 		inquiryType: {
 			type: String,
-			enum: InquiryType,
+
 			required: true,
 		},
 	},
