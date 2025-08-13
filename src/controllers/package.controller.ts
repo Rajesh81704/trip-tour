@@ -168,7 +168,7 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 			throw new ErrorHandler(404, "Package not found");
 		}
 
-		const { default: ReviewModel } = await import("../models/review.model");
+		const { ReviewModel } = await import("../models/review.model");
 		const reviews = await ReviewModel.find({ package: packageId })
 			.populate("user", "name email")
 			.sort({ createdAt: -1 });
