@@ -6,6 +6,7 @@ interface InquiryForm {
 	email: string;
 	destination: string;
 	message: string;
+	packageId: mongoose.Schema.Types.ObjectId;
 }
 
 const inquiryFormSchema = new mongoose.Schema<InquiryForm>(
@@ -30,6 +31,11 @@ const inquiryFormSchema = new mongoose.Schema<InquiryForm>(
 			type: String,
 			required: true,
 		},
+		packageId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Package",
+			required: true,
+		},
 	},
 	{ timestamps: true },
 );
@@ -37,4 +43,4 @@ const inquiryFormSchema = new mongoose.Schema<InquiryForm>(
 const InquiryFormModel =
 	mongoose.models.InquiryForm || mongoose.model<InquiryForm>("InquiryForm", inquiryFormSchema);
 
-export { InquiryFormModel, InquiryForm };
+export { InquiryForm, InquiryFormModel };

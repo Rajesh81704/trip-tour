@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 
 export const createInquiryFormRequest = async (req: Request, res: Response): Promise<void> => {
 	try {
-		const { name, mobileNumber, email, destination, message } = req.body;
+		const { name, mobileNumber, email, destination, message, packageId } = req.body;
 		if (!name || !mobileNumber || !email || !destination || !message) {
 			throw new ErrorHandler(400, "All fields are required.");
 		}
@@ -23,9 +23,10 @@ export const createInquiryFormRequest = async (req: Request, res: Response): Pro
 			email,
 			destination,
 			message: message,
+			packageId,
 		};
 
-		const inquiryForm = await InquiryFormModel.create(inquiryFormData);
+		const inquiryForm = await InquiryFormModel.create(inquiryFormData as InquiryForm);
 
 		res.status(201).json({
 			success: true,
