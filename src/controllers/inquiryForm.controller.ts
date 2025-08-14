@@ -16,17 +16,28 @@ export const createInquiryFormRequest = async (req: Request, res: Response): Pro
 		if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(email)) {
 			throw new ErrorHandler(400, "Invalid email format.");
 		}
-
-		const inquiryFormData: InquiryForm = {
-			name,
-			mobileNumber,
-			email,
-			destination,
-			message: message,
-			packageId,
-		};
-
-		const inquiryForm = await InquiryFormModel.create(inquiryFormData as InquiryForm);
+		let inquiryFormData: InquiryForm;
+		let inquiryForm: InquiryForm;
+		if (!packageId) {
+			inquiryFormData = {
+				name,
+				mobileNumber,
+				email,
+				destination,
+				message: message,
+			};
+			inquiryForm = await InquiryFormModel.create(inquiryFormData);
+		} else {
+			inquiryFormData = {
+				name,
+				mobileNumber,
+				email,
+				destination,
+				message: message,
+				packageId,
+			};
+			inquiryForm = await InquiryFormModel.create(inquiryFormData as InquiryForm);
+		}
 
 		res.status(201).json({
 			success: true,

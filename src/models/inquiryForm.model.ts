@@ -6,7 +6,7 @@ interface InquiryForm {
 	email: string;
 	destination: string;
 	message: string;
-	packageId: mongoose.Schema.Types.ObjectId;
+	packageId?: mongoose.Schema.Types.ObjectId;
 }
 
 const inquiryFormSchema = new mongoose.Schema<InquiryForm>(
@@ -34,7 +34,7 @@ const inquiryFormSchema = new mongoose.Schema<InquiryForm>(
 		packageId: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "Package",
-			required: true,
+			required: false,
 		},
 	},
 	{ timestamps: true },
