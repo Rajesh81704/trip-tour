@@ -3,7 +3,6 @@ import {
 	deletePackage,
 	getAllPackages,
 	getPackageById,
-	getPackageByState,
 	gettingPopularPackages,
 	updatePackage,
 } from "@/controllers/package.controller";
@@ -32,13 +31,6 @@ packageRouter.get("/", getAllPackages);
  * @access  Public
  */
 packageRouter.get("/popular", gettingPopularPackages);
-
-/**
- * @route   GET /state/Rajasthan /api/packages/state/:state
- * @desc    Get packages by state
- * @access  Public
- */
-packageRouter.get("/state/:state", getPackageByState);
 
 /**
  * @route   GET /:id /api/packages/:id

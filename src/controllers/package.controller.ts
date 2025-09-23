@@ -131,10 +131,59 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 		throw new ErrorHandler(500, "Error creating package");
 	}
 };
-
-const getAllPackages = async (_req: Request, res: Response): Promise<void> => {
+const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	try {
-		const packages = await PackageModel.find();
+		const { state, city, destination, category, minPrice, maxPrice, search } = req.query;
+
+		// Build filter object based on query parameters
+		const filter: any = {};
+
+		if (state) {
+			const stateQuery = String(state).toLowerCase().replace(/-/g, " "); // Replace hyphens with spaces
+			filter["location.state"] = { $regex: new RegExp(stateQuery, "i") };
+		}
+		if (city) {
+			const cityQuery = String(city).toLowerCase().replace(/-/g, " ");
+			filter["location.city"] = { $regex: new RegExp(cityQuery, "i") };
+		}
+		if (destination) {
+			const destinationQuery = String(destination).toLowerCase().replace(/-/g, " ");
+			filter["location.destination"] = { $regex: new RegExp(destinationQuery, "i") };
+		}
+		if (category) {
+			const categoryQuery = String(category).toLowerCase().replace(/-/g, " ");
+			filter.category = { $regex: new RegExp(categoryQuery, "i") };
+		}
+
+		if (minPrice || maxPrice) {
+			filter.price = {};
+			if (minPrice) filter.price.$gte = Number(minPrice);
+			if (maxPrice) filter.price.$lte = Number(maxPrice);
+		}
+
+		if (search) {
+			const searchQuery = String(search)
+				.toLowerCase()
+				.replace(/[-\s]+/g, ".*"); // Make search more flexible
+			const searchRegex = new RegExp(searchQuery, "i");
+			filter.$or = [
+				{ title: { $regex: searchRegex } },
+				{ description: { $regex: searchRegex } },
+				{ "location.state": { $regex: searchRegex } },
+				{ "location.city": { $regex: searchRegex } },
+				{ "location.destination": { $regex: searchRegex } },
+				{ category: { $regex: searchRegex } },
+				{ features: { $regex: searchRegex } },
+				{ highlights: { $regex: searchRegex } },
+				{ "itinerary.title": { $regex: searchRegex } },
+				{ "itinerary.description": { $regex: searchRegex } },
+				{ inclusions: { $regex: searchRegex } },
+				{ exclusions: { $regex: searchRegex } },
+			];
+		}
+
+		const packages = await PackageModel.find(filter);
+
 		if (!packages || packages.length === 0) {
 			throw new ErrorHandler(404, "No packages found");
 		}
@@ -183,31 +232,6 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 			throw new ErrorHandler(400, error.message);
 		}
 		throw new ErrorHandler(500, "Error fetching package by ID");
-	}
-};
-
-const getPackageByState = async (req: Request, res: Response): Promise<void> => {
-	const state = req.params.state;
-	if (!state) {
-		throw new ErrorHandler(400, "State is required");
-	}
-
-	try {
-		const packages = await PackageModel.find({ "location.state": state });
-
-		if (!packages || packages.length === 0) {
-			throw new ErrorHandler(404, "No packages found for the specified state");
-		}
-
-		res.status(200).json({
-			success: true,
-			packages,
-		});
-	} catch (error) {
-		if (error instanceof Error) {
-			throw new ErrorHandler(400, error.message);
-		}
-		throw new ErrorHandler(500, "Error fetching packages by state");
 	}
 };
 
@@ -367,7 +391,6 @@ export {
 	createPackage,
 	getAllPackages,
 	getPackageById,
-	getPackageByState,
 	updatePackage,
 	deletePackage,
 	gettingPopularPackages,
