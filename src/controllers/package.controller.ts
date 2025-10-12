@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import { PackageModel, IPackage } from "@/models/package.model";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
@@ -133,13 +134,21 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 };
 const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	try {
-		const { state, city, destination, category, minPrice, maxPrice, search } = req.query;
+		const { state, city, destination, category, minPrice, maxPrice, search } = req.query as {
+			state?: string;
+			city?: string;
+			destination?: string;
+			category?: string;
+			minPrice?: string;
+			maxPrice?: string;
+			search?: string;
+		};
 
 		// Build filter object based on query parameters
-		const filter: any = {};
+		const filter: Record<string, any> = {};
 
 		if (state) {
-			const stateQuery = String(state).toLowerCase().replace(/-/g, " "); // Replace hyphens with spaces
+			const stateQuery = String(state).toLowerCase().replace(/-/g, " ");
 			filter["location.state"] = { $regex: new RegExp(stateQuery, "i") };
 		}
 		if (city) {
@@ -164,7 +173,7 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 		if (search) {
 			const searchQuery = String(search)
 				.toLowerCase()
-				.replace(/[-\s]+/g, ".*"); // Make search more flexible
+				.replace(/[-\s]+/g, ".*");
 			const searchRegex = new RegExp(searchQuery, "i");
 			filter.$or = [
 				{ title: { $regex: searchRegex } },
