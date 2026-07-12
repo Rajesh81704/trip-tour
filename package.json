@@ -32,6 +32,8 @@
 		"passport-google-oauth20": "^2.0.0",
 		"sharp": "^0.34.2",
 		"streamifier": "^0.1.1",
+		"swagger-jsdoc": "^6.3.0",
+		"swagger-ui-express": "^5.0.1",
 		"uuid": "^11.1.0",
 		"winston": "^3.17.0"
 	},
@@ -48,6 +50,8 @@
 		"@types/passport": "^1.0.17",
 		"@types/passport-google-oauth20": "^2.0.16",
 		"@types/streamifier": "^0.1.2",
+		"@types/swagger-jsdoc": "^6.0.4",
+		"@types/swagger-ui-express": "^4.1.8",
 		"@types/uuid": "^10.0.0",
 		"@typescript-eslint/eslint-plugin": "^8.18.2",
 		"@typescript-eslint/parser": "^8.18.2",

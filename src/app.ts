@@ -2,11 +2,13 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
 // import rateLimit from "express-rate-limit";
+import swaggerUi from "swagger-ui-express";
 
 import { config } from "@/config/config";
 import { connectDB } from "@/config/db";
 import { errorHandler } from "@/middlewares/error-handler.middleware";
 import { logger, loggerMiddleware } from "@/utils/logger";
+import { swaggerSpec } from "@/config/swagger";
 
 import passport from "@/config/passport";
 
@@ -49,9 +51,10 @@ app.use(
 	cors({
 		origin: [
 			"http://localhost:3000",
-			"https://www.naturevacation.in",
-			"https://naturevacation.in",
-			"https://admin.naturevacation.in",
+			"http://localhost:3001",
+			"https://www.triptootravels.com",
+			"https://triptootravels.com",
+			"https://admin.triptootravels.com",
 		],
 		methods: ["GET", "POST", "PUT", "DELETE"],
 		credentials: true,
@@ -64,6 +67,27 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(passport.initialize());
 
+// ── Swagger UI ────────────────────────────────────────────────────────────────
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api-docs.json", (_req: Request, res: Response) => {
+	res.setHeader("Content-Type", "application/json");
+	res.send(swaggerSpec);
+});
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Server is running
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MessageResponse'
+ */
 app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).json({ message: "Server is healthy" });
 });
@@ -77,6 +101,79 @@ app.use("/contacts", contactRouter);
 app.use("/reviews", reviewRouter);
 app.use("/admin", adminRouter);
 
+/**
+ * @swagger
+ * /info:
+ *   get:
+ *     summary: Admin dashboard statistics
+ *     tags: [Dashboard]
+ *     security:
+ *       - adminCookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard overview with counts, recent activity, and analytics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalUsers:
+ *                   type: integer
+ *                   example: 120
+ *                 totalPackages:
+ *                   type: integer
+ *                   example: 35
+ *                 totalInquiries:
+ *                   type: integer
+ *                   example: 200
+ *                 totalB2BRequests:
+ *                   type: integer
+ *                   example: 15
+ *                 totalContacts:
+ *                   type: integer
+ *                   example: 80
+ *                 totalReviews:
+ *                   type: integer
+ *                   example: 300
+ *                 recentInquiries:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Inquiry'
+ *                 recentReviews:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Review'
+ *                 recentB2BRequests:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/B2BRequest'
+ *                 reviewStats:
+ *                   type: object
+ *                   properties:
+ *                     averageRating:
+ *                       type: number
+ *                       example: 4.2
+ *                     fiveStars:
+ *                       type: integer
+ *                     fourStars:
+ *                       type: integer
+ *                     threeStars:
+ *                       type: integer
+ *                     twoStars:
+ *                       type: integer
+ *                     oneStar:
+ *                       type: integer
+ *                 popularPackages:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Package'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 app.route("/info").get(async (_req: Request, res: Response) => {
 	try {
 		// Get total counts

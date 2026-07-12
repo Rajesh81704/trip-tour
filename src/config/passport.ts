@@ -12,7 +12,7 @@ passport.use(
 			clientSecret: config.googleClientSecret as string,
 			callbackURL:
 				process.env.NODE_ENV === "production"
-					? "https://api.naturevacation.in/auth/callback/google"
+					? "https://api.triptootravels.com/auth/callback/google"
 					: "http://localhost:8000/auth/callback/google",
 		},
 		async function (accessToken: string, refreshToken: string, profile: Profile, cb) {

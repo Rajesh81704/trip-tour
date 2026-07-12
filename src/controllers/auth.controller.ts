@@ -29,7 +29,7 @@ export const google = (req: Request, res: Response) => {
 		maxAge: 7 * 24 * 60 * 60 * 1000,
 	});
 
-	res.redirect("https://www.naturevacation.in");
+	res.redirect("https://www.triptootravels.com");
 };
 
 export const register = async (req: Request, res: Response) => {
