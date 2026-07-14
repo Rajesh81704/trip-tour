@@ -90,6 +90,15 @@ if (config.env !== "production") {
  *             schema:
  *               $ref: '#/components/schemas/MessageResponse'
  */
+app.get("/", (_req: Request, res: Response) => {
+	res.status(200).json({
+		message: "TripToo Travels API is running",
+		version: "1.0.0",
+		docs: "/api-docs",
+		health: "/health",
+	});
+});
+
 app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).json({ message: "Server is healthy" });
 });
