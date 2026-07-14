@@ -263,40 +263,36 @@ const PORT = Number(config.port) || 8000;
 // 	admin.save();
 // };
 
-cron.schedule("*/13 * * * *", async () => {
-	try {
-		https.get(config.healthCheckUrl, (res) => {
-			logger.info("Health check response:", res.statusCode);
-			res.on("data", (chunk) => {
-				logger.info("Health check response:", chunk.toString());
+// Health check cron — only runs in persistent (non-serverless) environments
+if (config.env !== "production") {
+	cron.schedule("*/13 * * * *", async () => {
+		try {
+			https.get(config.healthCheckUrl as string, (res) => {
+				logger.info("Health check response:", res.statusCode);
+				res.on("data", (chunk) => {
+					logger.info("Health check response:", chunk.toString());
+				});
 			});
-		});
-	} catch (error) {
-		logger.error("Health check failed:", error);
-	}
-});
+		} catch (error) {
+			logger.error("Health check failed:", error);
+		}
+	});
+}
 
-// cron.schedule("*/30 * * * * *", async () => {
-// 	try {
-// 		https.get(config.healthCheckUrl, (res) => {
-// 			logger.info("Health check response:", res.statusCode);
-// 			res.on("data", (chunk) => {
-// 				logger.info("Health check response:", chunk.toString());
-// 			});
-// 		});
-// 	} catch (error) {
-// 		logger.error("Health check failed:", error);
-// 	}
-// });
-
+// Connect to DB and start server (local dev only — Vercel handles its own lifecycle)
 connectDB()
 	.then(() => {
-		// createAdminDummy();
-		app.listen(PORT, () => {
-			logger.info(`Server is running on http://localhost:${PORT}`);
-		});
+		if (config.env !== "production") {
+			// createAdminDummy();
+			app.listen(PORT, () => {
+				logger.info(`Server is running on http://localhost:${PORT}`);
+			});
+		}
 	})
 	.catch((error) => {
 		logger.error("Failed to connect to the database:", error);
-		process.exit(1);
+		if (config.env !== "production") process.exit(1);
 	});
+
+// Export for Vercel serverless
+export default app;
