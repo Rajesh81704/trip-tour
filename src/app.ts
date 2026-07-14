@@ -264,17 +264,7 @@ app.use(errorHandler);
 
 const PORT = Number(config.port) || 8000;
 
-// const createAdminDummy = async () => {
-// 	const admin = new AdminModel({
-// 		email: "admin@admin.com",
-// 		username: "admin",
-// 		password: bcrypt.hashSync("admin@123", 12),
-// 		name: "Admin",
-// 	});
-// 	admin.save();
-// };
-
-// Health check cron — only runs in persistent (non-serverless) environments
+// Health check cron — only in dev
 if (config.env !== "production") {
 	cron.schedule("*/13 * * * *", async () => {
 		try {
@@ -290,20 +280,20 @@ if (config.env !== "production") {
 	});
 }
 
-// Connect to DB and start server (local dev only — Vercel handles its own lifecycle)
-connectDB()
-	.then(() => {
-		if (config.env !== "production") {
-			// createAdminDummy();
+// VERCEL=1 is set automatically by Vercel — skip listen() there (serverless)
+// On Render and local dev, always start the HTTP server
+if (!process.env.VERCEL) {
+	connectDB()
+		.then(() => {
 			app.listen(PORT, () => {
 				logger.info(`Server is running on http://localhost:${PORT}`);
 			});
-		}
-	})
-	.catch((error) => {
-		logger.error("Failed to connect to the database:", error);
-		if (config.env !== "production") process.exit(1);
-	});
+		})
+		.catch((error) => {
+			logger.error("Failed to connect to the database:", error);
+			process.exit(1);
+		});
+}
 
 // Export for Vercel serverless
 export default app;
