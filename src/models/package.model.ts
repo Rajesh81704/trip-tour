@@ -29,111 +29,60 @@ interface IPackage extends Document {
 	inclusions: string[];
 	exclusions: string[];
 	category: string;
+	viewCount: number;
 }
 
 const packageSchema = new mongoose.Schema<IPackage>(
 	{
-		title: {
-			type: String,
-			required: true,
-		},
+		title: { type: String, required: true },
 		location: {
-			city: {
-				type: String,
-				required: true,
-			},
-			state: {
-				type: String,
-				required: true,
-			},
-			destination: {
-				type: String,
-				required: true,
-			},
+			city: { type: String, required: true },
+			state: { type: String, required: true },
+			destination: { type: String, required: true },
 		},
 		duration: {
-			day: {
-				type: Number,
-				required: true,
-			},
-			night: {
-				type: Number,
-			},
+			day: { type: Number, required: true },
+			night: { type: Number },
 		},
-		price: {
-			type: Number,
-			required: true,
-		},
-		discount: {
-			type: Number,
-			required: true,
-		},
-		reviews: [
-			{
-				type: mongoose.Schema.Types.ObjectId,
-				ref: "Review",
-			},
-		],
+		price: { type: Number, required: true },
+		discount: { type: Number, required: true },
+		viewCount: { type: Number, default: 0 },
+		reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
 		images: {
 			type: [
 				{
-					url: {
-						type: String,
-						required: true,
-					},
-					public_id: {
-						type: String,
-						required: true,
-					},
+					url: { type: String, required: true },
+					public_id: { type: String, required: true },
 				},
 			],
 			required: true,
 		},
-		features: {
-			type: [String],
-			required: true,
-		},
-		description: {
-			type: String,
-			required: true,
-		},
-		highlights: {
-			type: [String],
-			required: true,
-		},
+		features: { type: [String], required: true },
+		description: { type: String, required: true },
+		highlights: { type: [String], required: true },
 		itinerary: {
 			type: [
 				{
-					day: {
-						type: Number,
-						required: true,
-					},
-					title: {
-						type: String,
-						required: true,
-					},
-					description: {
-						type: String,
-						required: true,
-					},
+					day: { type: Number, required: true },
+					title: { type: String, required: true },
+					description: { type: String, required: true },
 				},
 			],
 		},
-		inclusions: {
-			type: [String],
-			required: true,
-		},
-		exclusions: {
-			type: [String],
-			required: true,
-		},
-		category: {
-			type: String,
-			required: true,
-		},
+		inclusions: { type: [String], required: true },
+		exclusions: { type: [String], required: true },
+		category: { type: String, required: true },
 	},
 	{ timestamps: true },
 );
+
+// Indexes for efficient filtering
+packageSchema.index({ "location.state": 1 });
+packageSchema.index({ "location.city": 1 });
+packageSchema.index({ category: 1 });
+packageSchema.index({ price: 1 });
+packageSchema.index({ viewCount: -1 });
+packageSchema.index({ createdAt: -1 });
 
 const PackageModel = mongoose.models.Package || mongoose.model("Package", packageSchema);
 export { PackageModel, IPackage };

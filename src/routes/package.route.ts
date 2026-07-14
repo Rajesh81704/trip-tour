@@ -2,6 +2,7 @@ import {
 	createPackage,
 	deletePackage,
 	getAllPackages,
+	getFilterMeta,
 	getPackageById,
 	gettingPopularPackages,
 	updatePackage,
@@ -10,6 +11,162 @@ import express from "express";
 import { upload } from "@/middlewares/multer.middleware";
 
 const packageRouter = express.Router();
+
+/**
+ * @swagger
+ * /packages:
+ *   get:
+ *     summary: Get all packages with filtering, sorting and pagination
+ *     tags: [Packages]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: Full-text search across title, description, location, category, features, etc.
+ *       - in: query
+ *         name: category
+ *         schema: { type: string }
+ *         description: Filter by category (case-insensitive, partial match)
+ *       - in: query
+ *         name: state
+ *         schema: { type: string }
+ *         description: Filter by location state
+ *       - in: query
+ *         name: city
+ *         schema: { type: string }
+ *         description: Filter by location city
+ *       - in: query
+ *         name: destination
+ *         schema: { type: string }
+ *         description: Filter by destination
+ *       - in: query
+ *         name: minPrice
+ *         schema: { type: number }
+ *         description: Minimum price (inclusive)
+ *       - in: query
+ *         name: maxPrice
+ *         schema: { type: number }
+ *         description: Maximum price (inclusive)
+ *       - in: query
+ *         name: minDays
+ *         schema: { type: integer }
+ *         description: Minimum trip duration in days
+ *       - in: query
+ *         name: maxDays
+ *         schema: { type: integer }
+ *         description: Maximum trip duration in days
+ *       - in: query
+ *         name: onSale
+ *         schema: { type: boolean }
+ *         description: If true, return only packages with discount > 0
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [newest, oldest, price-asc, price-desc, popular, discount]
+ *         description: Sort order (default newest)
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *         description: Results per page (max 100)
+ *     responses:
+ *       200:
+ *         description: Paginated list of packages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 packages:
+ *                   type: array
+ *                   items: { $ref: '#/components/schemas/Package' }
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total: { type: integer }
+ *                     page: { type: integer }
+ *                     limit: { type: integer }
+ *                     pages: { type: integer }
+ *                     hasNext: { type: boolean }
+ *                     hasPrev: { type: boolean }
+ */
+packageRouter.get("/", getAllPackages);
+
+/**
+ * @swagger
+ * /packages/filters/meta:
+ *   get:
+ *     summary: Get distinct filter values for populating sidebar UI
+ *     tags: [Packages]
+ *     description: Returns all distinct categories, states, and the min/max price & duration range.
+ *     responses:
+ *       200:
+ *         description: Filter metadata
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 filters:
+ *                   type: object
+ *                   properties:
+ *                     categories:
+ *                       type: array
+ *                       items: { type: string }
+ *                     states:
+ *                       type: array
+ *                       items: { type: string }
+ *                     priceRange:
+ *                       type: object
+ *                       properties:
+ *                         min: { type: number }
+ *                         max: { type: number }
+ *                         minDays: { type: integer }
+ *                         maxDays: { type: integer }
+ */
+packageRouter.get("/filters/meta", getFilterMeta);
+
+/**
+ * @swagger
+ * /packages/popular:
+ *   get:
+ *     summary: Get popular packages sorted by view count
+ *     tags: [Packages]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 6 }
+ *         description: Number of packages to return (max 20)
+ *     responses:
+ *       200:
+ *         description: List of popular packages
+ */
+packageRouter.get("/popular", gettingPopularPackages);
+
+/**
+ * @swagger
+ * /packages/{id}:
+ *   get:
+ *     summary: Get a package by ID (also increments view count)
+ *     tags: [Packages]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Package details with reviews
+ *       404:
+ *         description: Package not found
+ */
+packageRouter.get("/:id", getPackageById);
 
 /**
  * @swagger
@@ -25,159 +182,30 @@ const packageRouter = express.Router();
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required:
- *               - title
- *               - description
- *               - price
- *               - discount
- *               - category
- *               - location[city]
- *               - location[state]
- *               - location[destination]
- *               - duration[day]
+ *             required: [title, description, price, discount, category]
  *             properties:
- *               title:
- *                 type: string
- *                 example: "Kerala Backwaters Tour"
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *                 example: 15000
- *               discount:
- *                 type: number
- *                 example: 10
- *               category:
- *                 type: string
- *                 example: "Nature"
- *               location[city]:
- *                 type: string
- *                 example: "Alleppey"
- *               location[state]:
- *                 type: string
- *                 example: "Kerala"
- *               location[destination]:
- *                 type: string
- *                 example: "Alleppey Backwaters"
- *               duration[day]:
- *                 type: integer
- *                 example: 5
- *               duration[night]:
- *                 type: integer
- *                 example: 4
- *               features:
- *                 type: array
- *                 items:
- *                   type: string
- *               highlights:
- *                 type: array
- *                 items:
- *                   type: string
- *               inclusions:
- *                 type: array
- *                 items:
- *                   type: string
- *               exclusions:
- *                 type: array
- *                 items:
- *                   type: string
+ *               title: { type: string }
+ *               description: { type: string }
+ *               price: { type: number }
+ *               discount: { type: number }
+ *               category: { type: string }
+ *               location[city]: { type: string }
+ *               location[state]: { type: string }
+ *               location[destination]: { type: string }
+ *               duration[day]: { type: integer }
+ *               duration[night]: { type: integer }
+ *               features: { type: array, items: { type: string } }
+ *               highlights: { type: array, items: { type: string } }
+ *               inclusions: { type: array, items: { type: string } }
+ *               exclusions: { type: array, items: { type: string } }
  *               images:
  *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 description: Up to 10 images
+ *                 items: { type: string, format: binary }
  *     responses:
  *       201:
- *         description: Package created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Package'
- *       400:
- *         description: Validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Package created
  */
 packageRouter.post("/", upload.array("images", 10), createPackage);
-
-/**
- * @swagger
- * /packages:
- *   get:
- *     summary: Get all packages
- *     tags: [Packages]
- *     parameters:
- *       - in: query
- *         name: category
- *         schema:
- *           type: string
- *         description: Filter by category
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search by title or destination
- *     responses:
- *       200:
- *         description: List of packages
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Package'
- */
-packageRouter.get("/", getAllPackages);
-
-/**
- * @swagger
- * /packages/popular:
- *   get:
- *     summary: Get popular packages (sorted by view count)
- *     tags: [Packages]
- *     responses:
- *       200:
- *         description: List of popular packages
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Package'
- */
-packageRouter.get("/popular", gettingPopularPackages);
-
-/**
- * @swagger
- * /packages/{id}:
- *   get:
- *     summary: Get a package by ID
- *     tags: [Packages]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Package ObjectId
- *     responses:
- *       200:
- *         description: Package details
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Package'
- *       404:
- *         description: Package not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-packageRouter.get("/:id", getPackageById);
 
 /**
  * @swagger
@@ -191,43 +219,12 @@ packageRouter.get("/:id", getPackageById);
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               price:
- *                 type: number
- *               discount:
- *                 type: number
- *               category:
- *                 type: string
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *                 description: Up to 10 images
+ *         schema: { type: string }
  *     responses:
  *       200:
  *         description: Package updated
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Package'
  *       404:
  *         description: Package not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 packageRouter.put("/:id", upload.array("images", 10), updatePackage);
 
@@ -243,21 +240,12 @@ packageRouter.put("/:id", upload.array("images", 10), updatePackage);
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: string
+ *         schema: { type: string }
  *     responses:
  *       200:
  *         description: Package deleted
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/MessageResponse'
  *       404:
  *         description: Package not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 packageRouter.delete("/:id", deletePackage);
 
