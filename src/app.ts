@@ -54,7 +54,8 @@ const allowedOrigins = [
 	"https://www.triptootravels.com",
 	"https://triptootravels.com",
 	"https://admin.triptootravels.com",
-	// Vercel / custom frontend URL from env
+	"https://trip-tour-frontend.vercel.app",
+	// Dynamic from env
 	...(process.env.FRONTEND_URL_PROD ? [process.env.FRONTEND_URL_PROD] : []),
 	...(process.env.FRONTEND_URL_DEV ? [process.env.FRONTEND_URL_DEV] : []),
 ];
