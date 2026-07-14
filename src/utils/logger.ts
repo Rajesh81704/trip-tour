@@ -34,7 +34,9 @@ const level = () => {
 	return isDevelopment ? "debug" : "warn";
 };
 
-const transports = [
+const isProduction = (process.env.NODE_ENV || "development") === "production";
+
+const transports: winston.transport[] = [
 	new winston.transports.Console({
 		format: winston.format.combine(
 			winston.format.timestamp({ format: "HH:mm:ss" }),
@@ -42,18 +44,22 @@ const transports = [
 			winston.format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`),
 		),
 	}),
-
-	new winston.transports.File({
-		filename: path.join("logs", "error.log"),
-		level: "error",
-		format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
-	}),
-
-	new winston.transports.File({
-		filename: path.join("logs", "combined.log"),
-		format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
-	}),
 ];
+
+// File transports only in local dev — Vercel has a read-only filesystem
+if (!isProduction) {
+	transports.push(
+		new winston.transports.File({
+			filename: path.join("logs", "error.log"),
+			level: "error",
+			format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+		}),
+		new winston.transports.File({
+			filename: path.join("logs", "combined.log"),
+			format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+		}),
+	);
+}
 
 export const logger = winston.createLogger({
 	level: level(),
