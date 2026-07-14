@@ -67,12 +67,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(passport.initialize());
 
-// ── Swagger UI ────────────────────────────────────────────────────────────────
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get("/api-docs.json", (_req: Request, res: Response) => {
-	res.setHeader("Content-Type", "application/json");
-	res.send(swaggerSpec);
-});
+// ── Swagger UI (dev only — source files not available in production bundle) ───
+if (config.env !== "production") {
+	app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+	app.get("/api-docs.json", (_req: Request, res: Response) => {
+		res.setHeader("Content-Type", "application/json");
+		res.send(swaggerSpec);
+	});
+}
 
 /**
  * @swagger

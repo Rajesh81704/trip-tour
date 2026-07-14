@@ -310,7 +310,7 @@ const options: swaggerJsdoc.Options = {
 			{ name: "Dashboard", description: "Admin dashboard statistics" },
 		],
 	},
-	apis: ["./src/routes/*.ts", "./src/app.ts"],
+	apis: process.env.NODE_ENV === "production" ? [] : ["./src/routes/*.ts", "./src/app.ts"],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
