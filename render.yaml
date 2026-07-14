@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: trip-tour-backend
+    runtime: node
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: node dist/app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FRONTEND_URL_PROD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: HEALTH_CHECK_URL
+        sync: false
