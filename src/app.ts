@@ -30,6 +30,7 @@ import userRouter from "@/routes/user.route";
 
 import cron from "node-cron";
 import https from "https";
+import http from "http";
 
 // import { AdminModel } from "./models/admin.model";
 // import bcrypt from "bcrypt";
@@ -276,20 +277,21 @@ app.use(errorHandler);
 
 const PORT = Number(config.port) || 8000;
 
-// Health check cron — only in dev
-if (config.env !== "production") {
-	cron.schedule("*/13 * * * *", async () => {
-		try {
-			https.get(config.healthCheckUrl as string, (res) => {
-				logger.info("Health check response:", res.statusCode);
-				res.on("data", (chunk) => {
-					logger.info("Health check response:", chunk.toString());
-				});
-			});
-		} catch (error) {
-			logger.error("Health check failed:", error);
-		}
+// Keep-alive cron — runs on Render (persistent server) to prevent free-tier sleep.
+// Pings the / endpoint every 13 minutes.
+// Skipped on Vercel (serverless, no persistent process).
+if (!process.env.VERCEL) {
+	const selfUrl = config.healthCheckUrl || `http://localhost:${PORT}`;
+	cron.schedule("*/13 * * * *", () => {
+		const mod = selfUrl.startsWith("https") ? https : http;
+		mod.get(selfUrl, (res) => {
+			logger.info(`Keep-alive ping → ${selfUrl} [${res.statusCode}]`);
+			res.resume(); // drain the response
+		}).on("error", (err) => {
+			logger.error("Keep-alive ping failed:", err.message);
+		});
 	});
+	logger.info(`Keep-alive cron scheduled → ${selfUrl} every 13 min`);
 }
 
 // VERCEL=1 is set automatically by Vercel — skip listen() there (serverless)
