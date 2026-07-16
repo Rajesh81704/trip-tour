@@ -48,29 +48,10 @@ const app = express();
 
 app.use(loggerMiddleware);
 
-const allowedOrigins = [
-	"http://localhost:3000",
-	"http://localhost:3001",
-	"https://www.triptootravels.com",
-	"https://triptootravels.com",
-	"https://admin.triptootravels.com",
-	"https://trip-tour-frontend.vercel.app",
-	// Dynamic from env
-	...(process.env.FRONTEND_URL_PROD ? [process.env.FRONTEND_URL_PROD] : []),
-	...(process.env.FRONTEND_URL_DEV ? [process.env.FRONTEND_URL_DEV] : []),
-];
-
 app.use(
 	cors({
-		origin: (origin, callback) => {
-			// Allow requests with no origin (mobile apps, curl, Postman)
-			if (!origin) return callback(null, true);
-			if (allowedOrigins.includes(origin)) return callback(null, true);
-			// Allow any *.vercel.app preview deployments
-			if (origin.endsWith(".vercel.app")) return callback(null, true);
-			return callback(new Error(`CORS: origin ${origin} not allowed`));
-		},
-		methods: ["GET", "POST", "PUT", "DELETE"],
+		origin: true,
+		methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 		credentials: true,
 	}),
 );
