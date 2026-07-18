@@ -98,39 +98,6 @@ app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).json({ message: "Server is healthy" });
 });
 
-/**
- * Diagnostic endpoint to check database connection and data
- */
-app.get("/diagnostics", async (_req: Request, res: Response) => {
-	try {
-		const isConnected = mongoose.connection.readyState === 1;
-		const packageCount = await PackageModel.countDocuments();
-		const userCount = await UserModel.countDocuments();
-		const reviewCount = await ReviewModel.countDocuments();
-		
-		// Get a sample package
-		const samplePackage = await PackageModel.findOne().lean();
-		
-		res.status(200).json({
-			database: {
-				connected: isConnected,
-				connectionState: mongoose.connection.readyState,
-				uri: process.env.MONGODB_URI ? "***HIDDEN***" : "NOT SET",
-			},
-			collections: {
-				packages: packageCount,
-				users: userCount,
-				reviews: reviewCount,
-			},
-			samplePackage: samplePackage ? { _id: samplePackage._id, title: samplePackage.title } : null,
-		});
-	} catch (error) {
-		res.status(500).json({
-			error: error instanceof Error ? error.message : "Unknown error",
-		});
-	}
-});
-
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/packages", packageRouter);
