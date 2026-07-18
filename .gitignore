@@ -96,4 +96,10 @@ ehthumbs.db
 Thumbs.db
 
 # Uploaded files
-uploads/ 
+uploads/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
