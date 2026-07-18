@@ -19,16 +19,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/trip-tour
-
             git fetch origin
             git reset --hard origin/main
-
             npm install
-
-            if pm2 describe trip-tour > /dev/null; then
+            npm run build
+            if pm2 describe trip-tour >/dev/null 2>&1; then
               pm2 restart trip-tour
             else
-              pm2 start server.js --name trip-tour
+              pm2 start dist/app.js --name trip-tour
             fi
-
             pm2 save
