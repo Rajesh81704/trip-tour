@@ -74,6 +74,8 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 
 // ─── Get All (with full filtering, sorting, pagination) ──────────────────────
 const getAllPackages = async (req: Request, res: Response): Promise<void> => {
+	console.log("[getAllPackages] Request received with query:", req.query);
+	
 	const {
 		state, city, destination, category, search,
 		minPrice, maxPrice, minDays, maxDays,
@@ -146,10 +148,16 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	const limitNum = Math.min(100, Math.max(1, Number(limit)));
 	const skip     = (pageNum - 1) * limitNum;
 
+	console.log("[getAllPackages] Filter:", filter);
+	console.log("[getAllPackages] Sort:", sort);
+	console.log("[getAllPackages] Pagination - Page:", pageNum, "Limit:", limitNum, "Skip:", skip);
+
 	const [packages, total] = await Promise.all([
 		PackageModel.find(filter).sort(sort).skip(skip).limit(limitNum).lean(),
 		PackageModel.countDocuments(filter),
 	]);
+
+	console.log("[getAllPackages] Found packages:", packages.length, "Total:", total);
 
 	res.status(200).json({
 		success: true,
