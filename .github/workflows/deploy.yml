@@ -1,0 +1,34 @@
+name: Deploy Express Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/trip-tour
+
+            git fetch origin
+            git reset --hard origin/main
+
+            npm install
+
+            if pm2 describe trip-tour > /dev/null; then
+              pm2 restart trip-tour
+            else
+              pm2 start server.js --name trip-tour
+            fi
+
+            pm2 save
