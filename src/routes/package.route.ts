@@ -205,7 +205,7 @@ packageRouter.get("/:id", getPackageById);
  *       201:
  *         description: Package created
  */
-packageRouter.post("/", upload.array("images", 10), createPackage);
+packageRouter.post("/", upload.any(), createPackage);
 
 /**
  * @swagger
@@ -226,7 +226,7 @@ packageRouter.post("/", upload.array("images", 10), createPackage);
  *       404:
  *         description: Package not found
  */
-packageRouter.put("/:id", upload.array("images", 10), updatePackage);
+packageRouter.put("/:id", upload.any(), updatePackage);
 
 /**
  * @swagger

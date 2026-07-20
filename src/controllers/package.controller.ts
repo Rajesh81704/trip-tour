@@ -11,23 +11,49 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 	const {
 		title, description, location, duration, features,
 		highlights, price, discount, itinerary, inclusions, exclusions, category,
+		flights, hotels,
 	} = formData;
 
 	let images: { url: string; public_id: string }[] = [];
+	let flightImages: { [key: number]: { url: string; public_id: string } } = {};
+	let hotelImages: { [key: number]: { url: string; public_id: string } } = {};
+
 	if (req.files && Array.isArray(req.files)) {
 		try {
 			const uploadPromises = req.files.map((file: Express.Multer.File) => uploadToCloudinary(file));
 			const uploadedResults = await Promise.all(uploadPromises);
-			images = uploadedResults
-				.filter((r) => r.url !== null && r.public_id !== null)
-				.map((r) => ({ url: r.url as string, public_id: r.public_id as string }));
+			
+			// Process uploaded files
+			for (let i = 0; i < req.files.length; i++) {
+				const file = req.files[i];
+				const result = uploadedResults[i];
+
+				if (result.url && result.public_id) {
+					const imageData = { url: result.url as string, public_id: result.public_id as string };
+					
+					// Check if this is a flight image
+					if (file.fieldname.startsWith("flight_image_")) {
+						const flightIndex = parseInt(file.fieldname.split("_")[2]);
+						flightImages[flightIndex] = imageData;
+					}
+					// Check if this is a hotel image
+					else if (file.fieldname.startsWith("hotel_image_")) {
+						const hotelIndex = parseInt(file.fieldname.split("_")[2]);
+						hotelImages[hotelIndex] = imageData;
+					}
+					// Otherwise it's a package image
+					else {
+						images.push(imageData);
+					}
+				}
+			}
 		} catch {
 			throw new ErrorHandler(500, "Error uploading images to Cloudinary");
 		}
 	}
 
 	let parsedLocation, parsedDuration, parsedFeatures, parsedHighlights,
-		parsedItinerary, parsedInclusions, parsedExclusions;
+		parsedItinerary, parsedInclusions, parsedExclusions, parsedFlights, parsedHotels;
 
 	try {
 		parsedLocation   = typeof location   === "string" ? JSON.parse(location)   : location;
@@ -37,6 +63,8 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 		parsedItinerary  = typeof itinerary  === "string" ? JSON.parse(itinerary)  : itinerary;
 		parsedInclusions = typeof inclusions === "string" ? JSON.parse(inclusions) : inclusions;
 		parsedExclusions = typeof exclusions === "string" ? JSON.parse(exclusions) : exclusions;
+		parsedFlights    = typeof flights    === "string" ? JSON.parse(flights)    : (flights || []);
+		parsedHotels     = typeof hotels     === "string" ? JSON.parse(hotels)     : (hotels || []);
 	} catch {
 		throw new ErrorHandler(400, "Invalid JSON format in form data");
 	}
@@ -47,7 +75,8 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 	};
 
 	for (const [field, value] of Object.entries(requiredFields)) {
-		if (!value) throw new ErrorHandler(400, `${field.replace("parsed", "")} is required`);
+		if (value === undefined || value === null || value === "")
+			throw new ErrorHandler(400, `${field.replace("parsed", "")} is required`);
 	}
 
 	if (!images || images.length === 0) throw new ErrorHandler(400, "At least one image is required");
@@ -57,12 +86,26 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 	if (Number(price) < 0) throw new ErrorHandler(400, "Price must be a positive number");
 
 	try {
+		// Add flight images to flights array
+		const flightsWithImages = (parsedFlights || []).map((flight: any, index: number) => ({
+			...flight,
+			image: flightImages[index] || flight.image,
+		}));
+
+		// Add hotel images to hotels array
+		const hotelsWithImages = (parsedHotels || []).map((hotel: any, index: number) => ({
+			...hotel,
+			image: hotelImages[index] || hotel.image,
+		}));
+
 		const newPackage = await PackageModel.create({
 			title, location: parsedLocation, description,
 			duration: parsedDuration, price: Number(price), reviews: [],
 			images, features: parsedFeatures, discount: Number(discount),
 			highlights: parsedHighlights, itinerary: parsedItinerary,
 			inclusions: parsedInclusions, exclusions: parsedExclusions, category,
+			flights: flightsWithImages,
+			hotels: hotelsWithImages,
 		});
 
 		res.status(201).json({ success: true, package: newPackage });
@@ -251,12 +294,46 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 
 	const updateData = { ...req.body } as Partial<IPackage>;
 
+	let flightImages: { [key: number]: { url: string; public_id: string } } = {};
+	let hotelImages: { [key: number]: { url: string; public_id: string } } = {};
+	let packageImages: { url: string; public_id: string }[] = [];
+
 	if (req.files && Array.isArray(req.files) && req.files.length > 0) {
 		try {
-			const results = await Promise.all(req.files.map((f: Express.Multer.File) => uploadToCloudinary(f)));
-			updateData.images = results
-				.filter((r) => r.url && r.public_id)
-				.map((r) => ({ url: r.url as string, public_id: r.public_id as string }));
+			const uploadPromises = req.files.map((f: Express.Multer.File) => uploadToCloudinary(f));
+			const uploadedResults = await Promise.all(uploadPromises);
+			
+			// Process uploaded files
+			for (let i = 0; i < req.files.length; i++) {
+				const file = req.files[i];
+				const result = uploadedResults[i];
+
+				if (result.url && result.public_id) {
+					const imageData = { url: result.url as string, public_id: result.public_id as string };
+					
+					// Check if this is a flight image
+					if (file.fieldname.startsWith("flight_image_")) {
+						const flightIndex = parseInt(file.fieldname.split("_")[2]);
+						flightImages[flightIndex] = imageData;
+					}
+					// Check if this is a hotel image
+					else if (file.fieldname.startsWith("hotel_image_")) {
+						const hotelIndex = parseInt(file.fieldname.split("_")[2]);
+						hotelImages[hotelIndex] = imageData;
+					}
+					// Otherwise it's a package image
+					else {
+						packageImages.push(imageData);
+					}
+				}
+			}
+			
+			// Update package images if new ones were uploaded
+			if (packageImages.length > 0) {
+				updateData.images = packageImages;
+			} else {
+				updateData.images = existingPackage.images;
+			}
 		} catch {
 			throw new ErrorHandler(500, "Error uploading images to Cloudinary");
 		}
@@ -264,7 +341,7 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 		updateData.images = existingPackage.images;
 	}
 
-	const fieldsToParse = ["location", "duration", "features", "highlights", "itinerary", "inclusions", "exclusions"];
+	const fieldsToParse = ["location", "duration", "features", "highlights", "itinerary", "inclusions", "exclusions", "flights", "hotels"];
 	for (const field of fieldsToParse) {
 		const val = updateData[field as keyof IPackage];
 		if (val && typeof val === "string") {
@@ -274,6 +351,22 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 				throw new ErrorHandler(400, `Invalid JSON format in ${field} field`);
 			}
 		}
+	}
+
+	// Add flight images to flights
+	if (updateData.flights && Array.isArray(updateData.flights)) {
+		updateData.flights = (updateData.flights as any[]).map((flight: any, index: number) => ({
+			...flight,
+			image: flightImages[index] || flight.image,
+		}));
+	}
+
+	// Add hotel images to hotels
+	if (updateData.hotels && Array.isArray(updateData.hotels)) {
+		updateData.hotels = (updateData.hotels as any[]).map((hotel: any, index: number) => ({
+			...hotel,
+			image: hotelImages[index] || hotel.image,
+		}));
 	}
 
 	if (updateData.price)    updateData.price    = Number(updateData.price);
