@@ -44,6 +44,28 @@ export async function generatePresignedUploadUrl(
 	return { uploadUrl, key, publicUrl };
 }
 
+// ─── Upload a file to R2 from the server (no CORS needed) ────────────────────
+export async function uploadToR2(
+	buffer: Buffer,
+	contentType: string,
+	folder = "packages",
+): Promise<{ key: string; publicUrl: string }> {
+	const ext = contentType.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
+	const key = `${folder}/${uuid()}.${ext}`;
+
+	await r2Client.send(
+		new PutObjectCommand({
+			Bucket:      BUCKET,
+			Key:         key,
+			ContentType: contentType,
+			Body:        buffer,
+		}),
+	);
+
+	const publicUrl = `${PUBLIC_BASE}/${key}`;
+	return { key, publicUrl };
+}
+
 // ─── Delete an object from R2 ─────────────────────────────────────────────────
 export async function deleteFromR2(key: string): Promise<boolean> {
 	if (!key) return false;

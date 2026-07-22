@@ -1,5 +1,5 @@
 import express from "express";
-import { getPresignedUrl, getBatchPresignedUrls, deleteUpload } from "@/controllers/upload.controller";
+import { getPresignedUrl, getBatchPresignedUrls, deleteUpload, uploadDirect, uploadMulter } from "@/controllers/upload.controller";
 
 const uploadRouter = express.Router();
 
@@ -56,5 +56,31 @@ uploadRouter.post("/presign/batch", getBatchPresignedUrls);
  *     tags: [Upload]
  */
 uploadRouter.delete("/", deleteUpload);
+
+/**
+ * @swagger
+ * /upload/direct:
+ *   post:
+ *     summary: Upload files to R2 through the backend (no CORS needed)
+ *     tags: [Upload]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               files:
+ *                 type: array
+ *                 items: { type: string, format: binary }
+ *               folder:
+ *                 type: string
+ *                 enum: [packages, hotels, flights, sightseeings, destinations, misc]
+ *                 default: packages
+ *     responses:
+ *       200:
+ *         description: Files uploaded
+ */
+uploadRouter.post("/direct", uploadMulter.array("files", 20), uploadDirect);
 
 export default uploadRouter;

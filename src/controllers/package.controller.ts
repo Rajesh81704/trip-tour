@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import { PackageModel, IPackage } from "@/models/package.model";
+import { ReviewModel } from "@/models/review.model";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import { deleteFromR2 } from "@/utils/r2";
 import mongoose from "mongoose";
@@ -164,7 +165,6 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 
 	if (!packageData) throw new ErrorHandler(404, "Package not found");
 
-	const { ReviewModel } = await import("../models/review.model");
 	const reviews = await ReviewModel.find({ package: packageId })
 		.populate("user", "name email").sort({ createdAt: -1 });
 
@@ -195,8 +195,8 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 		title:        b.title,
 		description:  b.description,
 		category:     b.category,
-		price:        b.price    ? Number(b.price)    : existing.price,
-		discount:     b.discount ? Number(b.discount) : existing.discount,
+		price:        b.price != null    ? Number(b.price)    : existing.price,
+		discount:     b.discount != null ? Number(b.discount) : existing.discount,
 		location:     parseField(b.location,     existing.location),
 		duration:     parseField(b.duration,     existing.duration),
 		features:     parseField(b.features,     existing.features),

@@ -1,9 +1,20 @@
 import { Request, Response } from "express";
-import { generatePresignedUploadUrl, deleteFromR2 } from "@/utils/r2";
+import { generatePresignedUploadUrl, deleteFromR2, uploadToR2 } from "@/utils/r2";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
+import multer from "multer";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 const VALID_FOLDERS = ["packages", "hotels", "flights", "sightseeings", "destinations", "misc"];
+
+// Multer configured for memory storage (buffer)
+export const uploadMulter = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+	fileFilter: (_req, file, cb) => {
+		if (ALLOWED_TYPES.includes(file.mimetype.toLowerCase())) cb(null, true);
+		else cb(new Error(`Unsupported file type: ${file.mimetype}`));
+	},
+});
 
 /**
  * POST /upload/presign
@@ -70,4 +81,26 @@ export const deleteUpload = async (req: Request, res: Response): Promise<void> =
 	if (!success) throw new ErrorHandler(500, "Failed to delete file from storage");
 
 	res.status(200).json({ success: true, message: "File deleted successfully" });
+};
+
+/**
+ * POST /upload/direct
+ * Multipart form: files[] + folder (string)
+ * Uploads files to R2 server-side (no CORS needed on R2 bucket).
+ * Returns: { success: true, results: Array<{ key, publicUrl }> }
+ */
+export const uploadDirect = async (req: Request, res: Response): Promise<void> => {
+	const files = req.files as Express.Multer.File[] | undefined;
+	const folder = (req.body.folder as string) || "packages";
+
+	if (!files || files.length === 0)
+		throw new ErrorHandler(400, "No files provided");
+	if (!VALID_FOLDERS.includes(folder))
+		throw new ErrorHandler(400, `Invalid folder. Allowed: ${VALID_FOLDERS.join(", ")}`);
+
+	const results = await Promise.all(
+		files.map((f) => uploadToR2(f.buffer, f.mimetype, folder)),
+	);
+
+	res.status(200).json({ success: true, results });
 };
