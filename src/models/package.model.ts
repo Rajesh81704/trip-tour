@@ -1,7 +1,7 @@
 import mongoose, { Document, Types } from "mongoose";
 
 interface IFlightOption {
-	type: "main" | "internal"; // main for international, internal for domestic
+	type: "main" | "internal";
 	airline: string;
 	flightNumber: string;
 	departureCity: string;
@@ -16,10 +16,7 @@ interface IFlightOption {
 	class: "economy" | "business" | "first";
 	price: number;
 	description?: string;
-	image?: {
-		url: string;
-		public_id: string;
-	};
+	image?: { url: string; public_id: string };
 }
 
 interface IHotelOption {
@@ -28,15 +25,34 @@ interface IHotelOption {
 	nights: number;
 	roomType: string;
 	amenities: string[];
-	image?: {
-		url: string;
-		public_id: string;
-	};
+	/** Multiple hotel images */
+	images?: { url: string; public_id: string }[];
+	/** Keep legacy single-image field for backwards compat */
+	image?: { url: string; public_id: string };
 	price: number;
 	description?: string;
 	starRating?: number;
 	checkInDate?: string;
 	checkOutDate?: string;
+}
+
+interface ISightseeingOption {
+	name: string;
+	description?: string;
+	location?: string;
+	duration?: string;
+	/** Multiple sightseeing images */
+	images?: { url: string; public_id: string }[];
+}
+
+interface IItineraryDay {
+	day: number;
+	title: string;
+	description: string;
+	/** Optional hotel name for this day */
+	hotelName?: string;
+	/** Optional city for this day */
+	city?: string;
 }
 
 interface IPackage extends Document {
@@ -53,109 +69,121 @@ interface IPackage extends Document {
 	};
 	price: number;
 	reviews: Types.ObjectId[];
-	images: {
-		url: string;
-		public_id: string;
-	}[];
+	images: { url: string; public_id: string }[];
 	features: string[];
 	discount: number;
 	highlights: string[];
-	itinerary: {
-		day: number;
-		title: string;
-		description: string;
-	}[];
+	itinerary: IItineraryDay[];
 	inclusions: string[];
 	exclusions: string[];
 	category: string;
 	viewCount: number;
 	flights?: IFlightOption[];
 	hotels?: IHotelOption[];
+	sightseeings?: ISightseeingOption[];
 }
 
 const packageSchema = new mongoose.Schema<IPackage>(
 	{
-		title: { type: String, required: true },
+		title:    { type: String, required: true },
 		location: {
-			city: { type: String, required: true },
-			state: { type: String, required: true },
+			city:        { type: String, required: true },
+			state:       { type: String, required: true },
 			destination: { type: String, required: true },
 		},
 		duration: {
-			day: { type: Number, required: true },
+			day:   { type: Number, required: true },
 			night: { type: Number },
 		},
-		price: { type: Number, required: true },
-		discount: { type: Number, required: true },
+		price:     { type: Number, required: true },
+		discount:  { type: Number, required: true },
 		viewCount: { type: Number, default: 0 },
-		reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
+		reviews:   [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }],
 		images: {
-			type: [
-				{
-					url: { type: String, required: true },
-					public_id: { type: String, required: true },
-				},
-			],
+			type: [{ url: { type: String, required: true }, public_id: { type: String, required: true } }],
 			required: true,
 		},
-		features: { type: [String], required: true },
+		features:    { type: [String], required: true },
 		description: { type: String, required: true },
-		highlights: { type: [String], required: true },
+		highlights:  { type: [String], required: true },
 		itinerary: {
 			type: [
 				{
-					day: { type: Number, required: true },
-					title: { type: String, required: true },
+					day:         { type: Number, required: true },
+					title:       { type: String, required: true },
 					description: { type: String, required: true },
+					hotelName:   { type: String },
+					city:        { type: String },
 				},
 			],
 		},
 		inclusions: { type: [String], required: true },
 		exclusions: { type: [String], required: true },
-		category: { type: String, required: true },
+		category:   { type: String, required: true },
+
+		// ── Flights ────────────────────────────────────────────────────────────
 		flights: {
 			type: [
 				{
-					type: { type: String, enum: ["main", "internal"], required: true },
-					airline: { type: String, required: true },
-					flightNumber: { type: String, required: true },
-					departureCity: { type: String, required: true },
+					type:             { type: String, enum: ["main", "internal"], required: true },
+					airline:          { type: String, required: true },
+					flightNumber:     { type: String, required: true },
+					departureCity:    { type: String, required: true },
 					departureAirport: { type: String, required: true },
-					departureTime: { type: String, required: true },
-					departureDate: { type: String, required: true },
-					arrivalCity: { type: String, required: true },
-					arrivalAirport: { type: String, required: true },
-					arrivalTime: { type: String, required: true },
-					arrivalDate: { type: String, required: true },
-					duration: { type: String, required: true },
-					class: { type: String, enum: ["economy", "business", "first"], default: "economy" },
-					price: { type: Number, required: true },
-					description: { type: String },
-					image: {
-						url: { type: String },
-						public_id: { type: String },
-					},
+					departureTime:    { type: String, required: true },
+					departureDate:    { type: String, required: true },
+					arrivalCity:      { type: String, required: true },
+					arrivalAirport:   { type: String, required: true },
+					arrivalTime:      { type: String, required: true },
+					arrivalDate:      { type: String, required: true },
+					duration:         { type: String, required: true },
+					class:            { type: String, enum: ["economy", "business", "first"], default: "economy" },
+					price:            { type: Number, required: true },
+					description:      { type: String },
+					image:            { url: { type: String }, public_id: { type: String } },
 				},
 			],
 			default: [],
 		},
+
+		// ── Hotels ─────────────────────────────────────────────────────────────
 		hotels: {
 			type: [
 				{
-					location: { type: String, required: true },
-					hotelName: { type: String, required: true },
-					nights: { type: Number, required: true },
-					roomType: { type: String, required: true },
-					amenities: { type: [String], default: [] },
-					image: {
-						url: { type: String },
-						public_id: { type: String },
+					location:    { type: String, required: true },
+					hotelName:   { type: String, required: true },
+					nights:      { type: Number, required: true },
+					roomType:    { type: String, required: true },
+					amenities:   { type: [String], default: [] },
+					// Multiple images
+					images: {
+						type: [{ url: { type: String }, public_id: { type: String } }],
+						default: [],
 					},
-					price: { type: Number, required: true },
+					// Legacy single image
+					image:       { url: { type: String }, public_id: { type: String } },
+					price:       { type: Number, required: true },
 					description: { type: String },
-					starRating: { type: Number, min: 1, max: 5 },
+					starRating:  { type: Number, min: 1, max: 5 },
 					checkInDate: { type: String },
-					checkOutDate: { type: String },
+					checkOutDate:{ type: String },
+				},
+			],
+			default: [],
+		},
+
+		// ── Sightseeings ───────────────────────────────────────────────────────
+		sightseeings: {
+			type: [
+				{
+					name:        { type: String, required: true },
+					description: { type: String },
+					location:    { type: String },
+					duration:    { type: String },
+					images: {
+						type: [{ url: { type: String }, public_id: { type: String } }],
+						default: [],
+					},
 				},
 			],
 			default: [],
@@ -164,7 +192,7 @@ const packageSchema = new mongoose.Schema<IPackage>(
 	{ timestamps: true },
 );
 
-// Indexes for efficient filtering
+// Indexes
 packageSchema.index({ "location.state": 1 });
 packageSchema.index({ "location.city": 1 });
 packageSchema.index({ category: 1 });
@@ -173,4 +201,4 @@ packageSchema.index({ viewCount: -1 });
 packageSchema.index({ createdAt: -1 });
 
 const PackageModel = mongoose.models.Package || mongoose.model("Package", packageSchema);
-export { PackageModel, IPackage, IFlightOption, IHotelOption };
+export { PackageModel, IPackage, IFlightOption, IHotelOption, ISightseeingOption, IItineraryDay };

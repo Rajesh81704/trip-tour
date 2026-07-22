@@ -8,7 +8,6 @@ import {
 	updatePackage,
 } from "@/controllers/package.controller";
 import express from "express";
-import { upload } from "@/middlewares/multer.middleware";
 
 const packageRouter = express.Router();
 
@@ -205,7 +204,7 @@ packageRouter.get("/:id", getPackageById);
  *       201:
  *         description: Package created
  */
-packageRouter.post("/", upload.any(), createPackage);
+packageRouter.post("/", createPackage);
 
 /**
  * @swagger
@@ -226,7 +225,7 @@ packageRouter.post("/", upload.any(), createPackage);
  *       404:
  *         description: Package not found
  */
-packageRouter.put("/:id", upload.any(), updatePackage);
+packageRouter.put("/:id", updatePackage);
 
 /**
  * @swagger

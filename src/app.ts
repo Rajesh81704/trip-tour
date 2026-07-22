@@ -27,6 +27,7 @@ import inquiryFormRouter from "@/routes/inquiryForm.route";
 import packageRouter from "@/routes/package.route";
 import reviewRouter from "@/routes/review.route";
 import userRouter from "@/routes/user.route";
+import uploadRouter from "@/routes/upload.route";
 
 import cron from "node-cron";
 import https from "https";
@@ -106,6 +107,7 @@ app.use("/b2b-requests", b2bRouter);
 app.use("/contacts", contactRouter);
 app.use("/reviews", reviewRouter);
 app.use("/admin", adminRouter);
+app.use("/upload", uploadRouter);
 
 /**
  * @swagger

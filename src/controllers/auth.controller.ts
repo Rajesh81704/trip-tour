@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "@/config/config";
 import { IUser, UserModel } from "@/models/user.model";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { AdminModel } from "@/models/admin.model";
 
 export const google = (req: Request, res: Response) => {

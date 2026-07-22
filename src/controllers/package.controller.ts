@@ -2,213 +2,122 @@
 import { Request, Response } from "express";
 import { PackageModel, IPackage } from "@/models/package.model";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
+import { deleteFromR2 } from "@/utils/r2";
 import mongoose from "mongoose";
-import { uploadToCloudinary, deleteFromCloudinary } from "@/utils/cloudinary";
+
+// ─── Helper: safely parse a JSON string or return the value as-is ────────────
+function parseField<T>(value: unknown, fallback: T): T {
+	if (typeof value === "string") {
+		try { return JSON.parse(value) as T; } catch { return fallback; }
+	}
+	return (value as T) ?? fallback;
+}
 
 // ─── Create ──────────────────────────────────────────────────────────────────
+// Images are already uploaded to R2 by the browser — they arrive as a JSON
+// array of { url, public_id } objects in req.body.images.
 const createPackage = async (req: Request, res: Response): Promise<void> => {
-	const formData = req.body;
-	const {
-		title, description, location, duration, features,
-		highlights, price, discount, itinerary, inclusions, exclusions, category,
-		flights, hotels,
-	} = formData;
+	const b = req.body;
 
-	let images: { url: string; public_id: string }[] = [];
-	let flightImages: { [key: number]: { url: string; public_id: string } } = {};
-	let hotelImages: { [key: number]: { url: string; public_id: string } } = {};
+	const title       = b.title       as string;
+	const description = b.description as string;
+	const price       = Number(b.price);
+	const discount    = Number(b.discount);
+	const category    = b.category    as string;
 
-	if (req.files && Array.isArray(req.files)) {
-		try {
-			const uploadPromises = req.files.map((file: Express.Multer.File) => uploadToCloudinary(file));
-			const uploadedResults = await Promise.all(uploadPromises);
-			
-			// Process uploaded files
-			for (let i = 0; i < req.files.length; i++) {
-				const file = req.files[i];
-				const result = uploadedResults[i];
+	const location     = parseField<any>(b.location,     null);
+	const duration     = parseField<any>(b.duration,     null);
+	const features     = parseField<string[]>(b.features,    []);
+	const highlights   = parseField<string[]>(b.highlights,  []);
+	const itinerary    = parseField<any[]>(b.itinerary,   []);
+	const inclusions   = parseField<string[]>(b.inclusions,  []);
+	const exclusions   = parseField<string[]>(b.exclusions,  []);
+	const flights      = parseField<any[]>(b.flights,     []);
+	const hotels       = parseField<any[]>(b.hotels,      []);
+	const sightseeings = parseField<any[]>(b.sightseeings,[]);
+	const images       = parseField<{ url: string; public_id: string }[]>(b.images, []);
 
-				if (result.url && result.public_id) {
-					const imageData = { url: result.url as string, public_id: result.public_id as string };
-					
-					// Check if this is a flight image
-					if (file.fieldname.startsWith("flight_image_")) {
-						const flightIndex = parseInt(file.fieldname.split("_")[2]);
-						flightImages[flightIndex] = imageData;
-					}
-					// Check if this is a hotel image
-					else if (file.fieldname.startsWith("hotel_image_")) {
-						const hotelIndex = parseInt(file.fieldname.split("_")[2]);
-						hotelImages[hotelIndex] = imageData;
-					}
-					// Otherwise it's a package image
-					else {
-						images.push(imageData);
-					}
-				}
-			}
-		} catch {
-			throw new ErrorHandler(500, "Error uploading images to Cloudinary");
-		}
-	}
+	// Validation
+	if (!title)       throw new ErrorHandler(400, "title is required");
+	if (!description) throw new ErrorHandler(400, "description is required");
+	if (!category)    throw new ErrorHandler(400, "category is required");
+	if (isNaN(price) || price < 0) throw new ErrorHandler(400, "price must be a positive number");
+	if (!location?.city || !location?.state || !location?.destination)
+		throw new ErrorHandler(400, "location.city, location.state and location.destination are required");
+	if (!duration?.day) throw new ErrorHandler(400, "duration.day is required");
+	if (!images.length) throw new ErrorHandler(400, "At least one image is required");
 
-	let parsedLocation, parsedDuration, parsedFeatures, parsedHighlights,
-		parsedItinerary, parsedInclusions, parsedExclusions, parsedFlights, parsedHotels;
+	const newPackage = await PackageModel.create({
+		title, description, location, duration,
+		price, discount, category,
+		features, highlights, itinerary,
+		inclusions, exclusions,
+		flights, hotels, sightseeings,
+		images, reviews: [],
+	});
 
-	try {
-		parsedLocation   = typeof location   === "string" ? JSON.parse(location)   : location;
-		parsedDuration   = typeof duration   === "string" ? JSON.parse(duration)   : duration;
-		parsedFeatures   = typeof features   === "string" ? JSON.parse(features)   : features;
-		parsedHighlights = typeof highlights === "string" ? JSON.parse(highlights) : highlights;
-		parsedItinerary  = typeof itinerary  === "string" ? JSON.parse(itinerary)  : itinerary;
-		parsedInclusions = typeof inclusions === "string" ? JSON.parse(inclusions) : inclusions;
-		parsedExclusions = typeof exclusions === "string" ? JSON.parse(exclusions) : exclusions;
-		parsedFlights    = typeof flights    === "string" ? JSON.parse(flights)    : (flights || []);
-		parsedHotels     = typeof hotels     === "string" ? JSON.parse(hotels)     : (hotels || []);
-	} catch {
-		throw new ErrorHandler(400, "Invalid JSON format in form data");
-	}
-
-	const requiredFields = {
-		title, parsedLocation, parsedDuration, price, parsedFeatures, discount,
-		description, parsedHighlights, parsedItinerary, parsedInclusions, parsedExclusions, category,
-	};
-
-	for (const [field, value] of Object.entries(requiredFields)) {
-		if (value === undefined || value === null || value === "")
-			throw new ErrorHandler(400, `${field.replace("parsed", "")} is required`);
-	}
-
-	if (!images || images.length === 0) throw new ErrorHandler(400, "At least one image is required");
-	if (!parsedLocation.city || !parsedLocation.state || !parsedLocation.destination)
-		throw new ErrorHandler(400, "Location must include city, state, and destination");
-	if (!parsedDuration.day) throw new ErrorHandler(400, "Duration must include day");
-	if (Number(price) < 0) throw new ErrorHandler(400, "Price must be a positive number");
-
-	try {
-		// Add flight images to flights array
-		const flightsWithImages = (parsedFlights || []).map((flight: any, index: number) => ({
-			...flight,
-			image: flightImages[index] || flight.image,
-		}));
-
-		// Add hotel images to hotels array
-		const hotelsWithImages = (parsedHotels || []).map((hotel: any, index: number) => ({
-			...hotel,
-			image: hotelImages[index] || hotel.image,
-		}));
-
-		const newPackage = await PackageModel.create({
-			title, location: parsedLocation, description,
-			duration: parsedDuration, price: Number(price), reviews: [],
-			images, features: parsedFeatures, discount: Number(discount),
-			highlights: parsedHighlights, itinerary: parsedItinerary,
-			inclusions: parsedInclusions, exclusions: parsedExclusions, category,
-			flights: flightsWithImages,
-			hotels: hotelsWithImages,
-		});
-
-		res.status(201).json({ success: true, package: newPackage });
-	} catch (error) {
-		if (error instanceof Error) throw new ErrorHandler(400, error.message);
-		throw new ErrorHandler(500, "Error creating package");
-	}
+	res.status(201).json({ success: true, package: newPackage });
 };
 
 // ─── Get All (with full filtering, sorting, pagination) ──────────────────────
 const getAllPackages = async (req: Request, res: Response): Promise<void> => {
-	console.log("[getAllPackages] Request received with query:", req.query);
-	
 	const {
 		state, city, destination, category, search,
 		minPrice, maxPrice, minDays, maxDays,
-		onSale,
-		sortBy = "newest",
-		page = "1", limit = "20",
+		onSale, sortBy = "newest", page = "1", limit = "20",
 	} = req.query as Record<string, string>;
 
 	const filter: Record<string, any> = {};
 
-	// ── Location filters ──────────────────────────────────────────────────────
-	if (state) filter["location.state"] = { $regex: new RegExp(String(state).replace(/-/g, " "), "i") };
-	if (city)  filter["location.city"]  = { $regex: new RegExp(String(city).replace(/-/g, " "),  "i") };
-	if (destination) filter["location.destination"] = { $regex: new RegExp(String(destination).replace(/-/g, " "), "i") };
+	if (state)       filter["location.state"]       = { $regex: new RegExp(state.replace(/-/g, " "), "i") };
+	if (city)        filter["location.city"]         = { $regex: new RegExp(city.replace(/-/g, " "), "i") };
+	if (destination) filter["location.destination"]  = { $regex: new RegExp(destination.replace(/-/g, " "), "i") };
+	if (category && category !== "all")
+		filter.category = { $regex: new RegExp(category.replace(/-/g, " "), "i") };
 
-	// ── Category filter ───────────────────────────────────────────────────────
-	if (category && category !== "all") {
-		filter.category = { $regex: new RegExp(String(category).replace(/-/g, " "), "i") };
-	}
-
-	// ── Price range ───────────────────────────────────────────────────────────
 	if (minPrice || maxPrice) {
 		filter.price = {};
 		if (minPrice) filter.price.$gte = Number(minPrice);
 		if (maxPrice) filter.price.$lte = Number(maxPrice);
 	}
-
-	// ── Duration filter (days) ────────────────────────────────────────────────
 	if (minDays || maxDays) {
 		filter["duration.day"] = {};
 		if (minDays) filter["duration.day"].$gte = Number(minDays);
 		if (maxDays) filter["duration.day"].$lte = Number(maxDays);
 	}
-
-	// ── On sale (has discount > 0) ────────────────────────────────────────────
 	if (onSale === "true") filter.discount = { $gt: 0 };
 
-	// ── Full-text search ──────────────────────────────────────────────────────
 	if (search) {
-		const searchRegex = new RegExp(String(search).replace(/[-\s]+/g, ".*"), "i");
+		const r = new RegExp(search.replace(/[-\s]+/g, ".*"), "i");
 		filter.$or = [
-			{ title:                    { $regex: searchRegex } },
-			{ description:              { $regex: searchRegex } },
-			{ "location.state":         { $regex: searchRegex } },
-			{ "location.city":          { $regex: searchRegex } },
-			{ "location.destination":   { $regex: searchRegex } },
-			{ category:                 { $regex: searchRegex } },
-			{ features:                 { $regex: searchRegex } },
-			{ highlights:               { $regex: searchRegex } },
-			{ "itinerary.title":        { $regex: searchRegex } },
-			{ "itinerary.description":  { $regex: searchRegex } },
-			{ inclusions:               { $regex: searchRegex } },
-			{ exclusions:               { $regex: searchRegex } },
+			{ title: { $regex: r } }, { description: { $regex: r } },
+			{ "location.state": { $regex: r } }, { "location.city": { $regex: r } },
+			{ "location.destination": { $regex: r } }, { category: { $regex: r } },
+			{ features: { $regex: r } }, { highlights: { $regex: r } },
+			{ "itinerary.title": { $regex: r } }, { inclusions: { $regex: r } },
 		];
 	}
 
-	// ── Sort ──────────────────────────────────────────────────────────────────
 	const sortMap: Record<string, Record<string, 1 | -1>> = {
-		newest:       { createdAt: -1 },
-		oldest:       { createdAt: 1 },
-		"price-asc":  { price: 1 },
-		"price-desc": { price: -1 },
-		popular:      { viewCount: -1 },
-		discount:     { discount: -1 },
+		newest: { createdAt: -1 }, oldest: { createdAt: 1 },
+		"price-asc": { price: 1 }, "price-desc": { price: -1 },
+		popular: { viewCount: -1 }, discount: { discount: -1 },
 	};
 	const sort = sortMap[sortBy] ?? sortMap.newest;
 
-	// ── Pagination ────────────────────────────────────────────────────────────
 	const pageNum  = Math.max(1, Number(page));
 	const limitNum = Math.min(100, Math.max(1, Number(limit)));
 	const skip     = (pageNum - 1) * limitNum;
-
-	console.log("[getAllPackages] Filter:", filter);
-	console.log("[getAllPackages] Sort:", sort);
-	console.log("[getAllPackages] Pagination - Page:", pageNum, "Limit:", limitNum, "Skip:", skip);
 
 	const [packages, total] = await Promise.all([
 		PackageModel.find(filter).sort(sort).skip(skip).limit(limitNum).lean(),
 		PackageModel.countDocuments(filter),
 	]);
 
-	console.log("[getAllPackages] Found packages:", packages.length, "Total:", total);
-
 	res.status(200).json({
-		success: true,
-		packages,
+		success: true, packages,
 		pagination: {
-			total,
-			page: pageNum,
-			limit: limitNum,
+			total, page: pageNum, limit: limitNum,
 			pages: Math.ceil(total / limitNum),
 			hasNext: pageNum * limitNum < total,
 			hasPrev: pageNum > 1,
@@ -216,36 +125,28 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	});
 };
 
-// ─── Filter Meta — distinct values for populating sidebar ────────────────────
+// ─── Filter Meta ─────────────────────────────────────────────────────────────
 const getFilterMeta = async (_req: Request, res: Response): Promise<void> => {
 	const [categories, states, priceRange] = await Promise.all([
 		PackageModel.distinct("category"),
 		PackageModel.distinct("location.state"),
-		PackageModel.aggregate([
-			{
-				$group: {
-					_id: null,
-					minPrice: { $min: "$price" },
-					maxPrice: { $max: "$price" },
-					minDays:  { $min: "$duration.day" },
-					maxDays:  { $max: "$duration.day" },
-				},
+		PackageModel.aggregate([{
+			$group: {
+				_id: null,
+				minPrice: { $min: "$price" }, maxPrice: { $max: "$price" },
+				minDays:  { $min: "$duration.day" }, maxDays:  { $max: "$duration.day" },
 			},
-		]),
+		}]),
 	]);
 
 	res.status(200).json({
 		success: true,
 		filters: {
 			categories: categories.filter(Boolean).sort(),
-			states: states.filter(Boolean).sort(),
+			states:     states.filter(Boolean).sort(),
 			priceRange: priceRange[0]
-				? {
-					min: priceRange[0].minPrice,
-					max: priceRange[0].maxPrice,
-					minDays: priceRange[0].minDays,
-					maxDays: priceRange[0].maxDays,
-				  }
+				? { min: priceRange[0].minPrice, max: priceRange[0].maxPrice,
+				    minDays: priceRange[0].minDays, maxDays: priceRange[0].maxDays }
 				: { min: 0, max: 100000, minDays: 1, maxDays: 30 },
 		},
 	});
@@ -255,20 +156,17 @@ const getFilterMeta = async (_req: Request, res: Response): Promise<void> => {
 const getPackageById = async (req: Request, res: Response): Promise<void> => {
 	const packageId = req.params.id;
 	if (!packageId) throw new ErrorHandler(400, "Package ID is required");
-	if (!mongoose.Types.ObjectId.isValid(packageId)) throw new ErrorHandler(400, "Invalid package ID format");
+	if (!mongoose.Types.ObjectId.isValid(packageId)) throw new ErrorHandler(400, "Invalid package ID");
 
 	const packageData = await PackageModel.findByIdAndUpdate(
-		packageId,
-		{ $inc: { viewCount: 1 } },
-		{ new: true },
+		packageId, { $inc: { viewCount: 1 } }, { new: true },
 	).lean();
 
 	if (!packageData) throw new ErrorHandler(404, "Package not found");
 
 	const { ReviewModel } = await import("../models/review.model");
 	const reviews = await ReviewModel.find({ package: packageId })
-		.populate("user", "name email")
-		.sort({ createdAt: -1 });
+		.populate("user", "name email").sort({ createdAt: -1 });
 
 	res.status(200).json({ success: true, package: packageData, reviews });
 };
@@ -277,121 +175,73 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 const gettingPopularPackages = async (req: Request, res: Response): Promise<void> => {
 	const limitNum = Math.min(20, Math.max(1, Number(req.query.limit ?? 6)));
 	const packages = await PackageModel.find()
-		.sort({ viewCount: -1, createdAt: -1 })
-		.limit(limitNum)
-		.lean();
-
+		.sort({ viewCount: -1, createdAt: -1 }).limit(limitNum).lean();
 	res.status(200).json({ success: true, packages });
 };
 
 // ─── Update ───────────────────────────────────────────────────────────────────
+// Images arrive pre-uploaded as JSON arrays — no file handling needed.
 const updatePackage = async (req: Request, res: Response): Promise<void> => {
 	const packageId = req.params.id;
 	if (!packageId) throw new ErrorHandler(400, "Package ID is required");
 
-	const existingPackage = await PackageModel.findById(packageId);
-	if (!existingPackage) throw new ErrorHandler(404, "Package not found");
+	const existing = await PackageModel.findById(packageId);
+	if (!existing) throw new ErrorHandler(404, "Package not found");
 
-	const updateData = { ...req.body } as Partial<IPackage>;
+	const b = req.body;
 
-	let flightImages: { [key: number]: { url: string; public_id: string } } = {};
-	let hotelImages: { [key: number]: { url: string; public_id: string } } = {};
-	let packageImages: { url: string; public_id: string }[] = [];
+	// Parse all JSON-stringified fields
+	const updateData: Record<string, unknown> = {
+		title:        b.title,
+		description:  b.description,
+		category:     b.category,
+		price:        b.price    ? Number(b.price)    : existing.price,
+		discount:     b.discount ? Number(b.discount) : existing.discount,
+		location:     parseField(b.location,     existing.location),
+		duration:     parseField(b.duration,     existing.duration),
+		features:     parseField(b.features,     existing.features),
+		highlights:   parseField(b.highlights,   existing.highlights),
+		itinerary:    parseField(b.itinerary,    existing.itinerary),
+		inclusions:   parseField(b.inclusions,   existing.inclusions),
+		exclusions:   parseField(b.exclusions,   existing.exclusions),
+		flights:      parseField(b.flights,      existing.flights ?? []),
+		hotels:       parseField(b.hotels,       existing.hotels  ?? []),
+		sightseeings: parseField(b.sightseeings, (existing as any).sightseeings ?? []),
+		// Images: use incoming if provided, otherwise keep existing
+		images:       parseField<{ url: string; public_id: string }[]>(
+						b.images, null as any
+					) || existing.images,
+	};
 
-	if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-		try {
-			const uploadPromises = req.files.map((f: Express.Multer.File) => uploadToCloudinary(f));
-			const uploadedResults = await Promise.all(uploadPromises);
-			
-			// Process uploaded files
-			for (let i = 0; i < req.files.length; i++) {
-				const file = req.files[i];
-				const result = uploadedResults[i];
-
-				if (result.url && result.public_id) {
-					const imageData = { url: result.url as string, public_id: result.public_id as string };
-					
-					// Check if this is a flight image
-					if (file.fieldname.startsWith("flight_image_")) {
-						const flightIndex = parseInt(file.fieldname.split("_")[2]);
-						flightImages[flightIndex] = imageData;
-					}
-					// Check if this is a hotel image
-					else if (file.fieldname.startsWith("hotel_image_")) {
-						const hotelIndex = parseInt(file.fieldname.split("_")[2]);
-						hotelImages[hotelIndex] = imageData;
-					}
-					// Otherwise it's a package image
-					else {
-						packageImages.push(imageData);
-					}
-				}
-			}
-			
-			// Update package images if new ones were uploaded
-			if (packageImages.length > 0) {
-				updateData.images = packageImages;
-			} else {
-				updateData.images = existingPackage.images;
-			}
-		} catch {
-			throw new ErrorHandler(500, "Error uploading images to Cloudinary");
-		}
-	} else {
-		updateData.images = existingPackage.images;
-	}
-
-	const fieldsToParse = ["location", "duration", "features", "highlights", "itinerary", "inclusions", "exclusions", "flights", "hotels"];
-	for (const field of fieldsToParse) {
-		const val = updateData[field as keyof IPackage];
-		if (val && typeof val === "string") {
-			try {
-				(updateData as Record<string, unknown>)[field] = JSON.parse(val);
-			} catch {
-				throw new ErrorHandler(400, `Invalid JSON format in ${field} field`);
-			}
-		}
-	}
-
-	// Add flight images to flights
-	if (updateData.flights && Array.isArray(updateData.flights)) {
-		updateData.flights = (updateData.flights as any[]).map((flight: any, index: number) => ({
-			...flight,
-			image: flightImages[index] || flight.image,
-		}));
-	}
-
-	// Add hotel images to hotels
-	if (updateData.hotels && Array.isArray(updateData.hotels)) {
-		updateData.hotels = (updateData.hotels as any[]).map((hotel: any, index: number) => ({
-			...hotel,
-			image: hotelImages[index] || hotel.image,
-		}));
-	}
-
-	if (updateData.price)    updateData.price    = Number(updateData.price);
-	if (updateData.discount) updateData.discount = Number(updateData.discount);
-
-	const updatedPackage = await PackageModel.findByIdAndUpdate(packageId, updateData, {
-		new: true, runValidators: true,
-	});
+	const updatedPackage = await PackageModel.findByIdAndUpdate(
+		packageId, updateData, { new: true, runValidators: true },
+	);
 
 	if (!updatedPackage) throw new ErrorHandler(404, "Package not found");
 	res.status(200).json({ success: true, package: updatedPackage });
 };
 
-// ─── Delete ───────────────────────────────────────────────────────────────────
+// ─── Delete (also cleans up R2 images) ───────────────────────────────────────
 const deletePackage = async (req: Request, res: Response): Promise<void> => {
 	const packageId = req.params.id;
 	if (!packageId) throw new ErrorHandler(400, "Package ID is required");
 
-	const packageToDelete = await PackageModel.findById(packageId);
-	if (!packageToDelete) throw new ErrorHandler(404, "Package not found");
+	const pkg = await PackageModel.findById(packageId);
+	if (!pkg) throw new ErrorHandler(404, "Package not found");
 
-	if (packageToDelete.images?.length) {
-		await Promise.all(packageToDelete.images.map((img: { public_id: string }) =>
-			deleteFromCloudinary(img.public_id),
-		));
+	// Delete all images from R2
+	const allKeys: string[] = [
+		...(pkg.images ?? []).map((i: any) => i.public_id),
+		...((pkg as any).hotels ?? []).flatMap((h: any) =>
+			[...(h.images ?? []), h.image ? h.image : null].filter(Boolean).map((i: any) => i.public_id)
+		),
+		...((pkg as any).sightseeings ?? []).flatMap((s: any) =>
+			(s.images ?? []).map((i: any) => i.public_id)
+		),
+	].filter(Boolean);
+
+	if (allKeys.length) {
+		await Promise.allSettled(allKeys.map((key) => deleteFromR2(key)));
 	}
 
 	await PackageModel.findByIdAndDelete(packageId);
@@ -399,11 +249,6 @@ const deletePackage = async (req: Request, res: Response): Promise<void> => {
 };
 
 export {
-	createPackage,
-	getAllPackages,
-	getFilterMeta,
-	getPackageById,
-	gettingPopularPackages,
-	updatePackage,
-	deletePackage,
+	createPackage, getAllPackages, getFilterMeta,
+	getPackageById, gettingPopularPackages, updatePackage, deletePackage,
 };

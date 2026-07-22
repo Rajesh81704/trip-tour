@@ -52,7 +52,7 @@ async function seedAdmin() {
       username: 'admin',
       email: 'admin@triptootravels.com',
       password: hashedPassword,
-      name: 'Administrator',
+      name: 'TripToo Travels Administrator',
     });
 
     await admin.save();
