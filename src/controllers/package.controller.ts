@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
-import { PackageModel, IPackage } from "@/models/package.model";
+import { PackageModel } from "@/models/package.model";
 import { ReviewModel } from "@/models/review.model";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import { deleteFromR2 } from "@/utils/r2";
