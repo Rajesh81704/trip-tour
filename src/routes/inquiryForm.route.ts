@@ -2,10 +2,14 @@ import {
 	createInquiryFormRequest,
 	deleteInquiryFormRequest,
 	getInquiryFormRequests,
+	getMyInquiryRequests,
 } from "@/controllers/inquiryForm.controller";
-import express from "express";
+import { userVerify } from "@/middlewares/userverify.middleware";
+import express, { RequestHandler } from "express";
 
 const inquiryFormRouter = express.Router();
+
+inquiryFormRouter.get("/my-requests", userVerify, getMyInquiryRequests as RequestHandler);
 
 /**
  * @swagger

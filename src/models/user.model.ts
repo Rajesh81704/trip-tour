@@ -4,6 +4,7 @@ export interface IUser extends Document {
 	name: string;
 	password: string;
 	email: string;
+	phone?: string;
 	avatar: string;
 	googleId: string;
 	googleAccessToken: string;
@@ -20,6 +21,10 @@ const userSchema = new mongoose.Schema<IUser>(
 			type: String,
 			required: false,
 			unique: true,
+		},
+		phone: {
+			type: String,
+			required: false,
 		},
 		googleId: {
 			type: String,

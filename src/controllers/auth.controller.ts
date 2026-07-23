@@ -34,7 +34,7 @@ export const google = (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
 	try {
-		const { name, email, password } = req.body;
+		const { name, email, password, phone } = req.body;
 		if (!name || !email || !password) {
 			return res.status(400).json({ message: "All fields are required" });
 		}
@@ -59,7 +59,7 @@ export const register = async (req: Request, res: Response) => {
 		}
 		const avatar = `https://ui-avatars.com/api/?name=${name}&background=random`;
 		const hashedPassword = await bcrypt.hash(password, 12);
-		const user = await UserModel.create({ name, email, password: hashedPassword, avatar });
+		const user = await UserModel.create({ name, email, password: hashedPassword, avatar, phone: phone || "" });
 		const payload = {
 			id: user._id,
 			email: user.email,
@@ -74,6 +74,7 @@ export const register = async (req: Request, res: Response) => {
 			name: user.name,
 			email: user.email,
 			avatar: user.avatar,
+			phone: user.phone || "",
 		};
 		res.cookie("token", token, {
 			httpOnly: true,
@@ -129,6 +130,7 @@ export const login = async (req: Request, res: Response) => {
 			name: user.name,
 			email: user.email,
 			avatar: user.avatar,
+			phone: user.phone || "",
 		};
 		res.cookie("token", token, {
 			httpOnly: true,

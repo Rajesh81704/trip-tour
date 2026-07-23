@@ -12,13 +12,14 @@ async function getUser(req: Request, res: Response) {
 		if (!user) {
 			return res.status(404).json({ message: "User not found" });
 		}
-		const { _id, email, name, avatar } = user;
+		const { _id, email, name, avatar, phone } = user;
 		return res.status(200).json({
 			user: {
 				id: _id,
 				email,
 				name,
 				avatar,
+				phone: phone || "",
 			},
 		});
 	} catch (error) {

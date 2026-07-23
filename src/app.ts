@@ -28,6 +28,7 @@ import packageRouter from "@/routes/package.route";
 import reviewRouter from "@/routes/review.route";
 import userRouter from "@/routes/user.route";
 import uploadRouter from "@/routes/upload.route";
+import visaRouter from "@/routes/visa.route";
 
 import cron from "node-cron";
 import https from "https";
@@ -108,6 +109,7 @@ app.use("/contacts", contactRouter);
 app.use("/reviews", reviewRouter);
 app.use("/admin", adminRouter);
 app.use("/upload", uploadRouter);
+app.use("/visa", visaRouter);
 
 /**
  * @swagger
