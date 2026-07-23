@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { generatePresignedUploadUrl, deleteFromR2, uploadToR2 } from "@/utils/r2";
+import { generatePresignedUploadUrl, deleteFromR2, uploadToR2, getObjectFromR2 } from "@/utils/r2";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
+import { logger } from "@/utils/logger";
 import multer from "multer";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
@@ -103,4 +104,33 @@ export const uploadDirect = async (req: Request, res: Response): Promise<void> =
 	);
 
 	res.status(200).json({ success: true, results });
+};
+
+/**
+ * GET /upload/file/*
+ * Serves an R2 file stream directly with proper Content-Type & cache headers.
+ */
+export const serveR2File = async (req: Request, res: Response): Promise<void> => {
+	const key = (req.params as any)[0] || (req.query.key as string);
+	if (!key) throw new ErrorHandler(400, "File key is required");
+
+	try {
+		const obj = await getObjectFromR2(key);
+		if (!obj.Body) throw new ErrorHandler(404, "File not found in storage");
+
+		if (obj.ContentType) res.setHeader("Content-Type", obj.ContentType);
+		if (obj.ContentLength) res.setHeader("Content-Length", obj.ContentLength);
+		res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+		const stream = obj.Body as any;
+		if (typeof stream.pipe === "function") {
+			stream.pipe(res);
+		} else {
+			const byteArray = await stream.transformToByteArray();
+			res.send(Buffer.from(byteArray));
+		}
+	} catch (err) {
+		logger.error(`Failed to serve R2 file ${key}:`, err);
+		throw new ErrorHandler(404, "File not found");
+	}
 };

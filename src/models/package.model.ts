@@ -125,21 +125,21 @@ const packageSchema = new mongoose.Schema<IPackage>(
 		flights: {
 			type: [
 				{
-					type:             { type: String, enum: ["main", "internal"], required: true },
-					airline:          { type: String, required: true },
-					flightNumber:     { type: String, required: true },
-					departureCity:    { type: String, required: true },
-					departureAirport: { type: String, required: true },
-					departureTime:    { type: String, required: true },
-					departureDate:    { type: String, required: true },
-					arrivalCity:      { type: String, required: true },
-					arrivalAirport:   { type: String, required: true },
-					arrivalTime:      { type: String, required: true },
-					arrivalDate:      { type: String, required: true },
-					duration:         { type: String, required: true },
+					type:             { type: String, enum: ["main", "internal"], default: "main" },
+					airline:          { type: String, default: "" },
+					flightNumber:     { type: String, default: "" },
+					departureCity:    { type: String, default: "" },
+					departureAirport: { type: String, default: "" },
+					departureTime:    { type: String, default: "" },
+					departureDate:    { type: String, default: "" },
+					arrivalCity:      { type: String, default: "" },
+					arrivalAirport:   { type: String, default: "" },
+					arrivalTime:      { type: String, default: "" },
+					arrivalDate:      { type: String, default: "" },
+					duration:         { type: String, default: "" },
 					class:            { type: String, enum: ["economy", "business", "first"], default: "economy" },
-					price:            { type: Number, required: true },
-					description:      { type: String },
+					price:            { type: Number, default: 0 },
+					description:      { type: String, default: "" },
 					image:            { url: { type: String }, public_id: { type: String } },
 				},
 			],
@@ -150,10 +150,10 @@ const packageSchema = new mongoose.Schema<IPackage>(
 		hotels: {
 			type: [
 				{
-					location:    { type: String, required: true },
-					hotelName:   { type: String, required: true },
-					nights:      { type: Number, required: true },
-					roomType:    { type: String, required: true },
+					location:    { type: String, default: "" },
+					hotelName:   { type: String, default: "" },
+					nights:      { type: Number, default: 1 },
+					roomType:    { type: String, default: "" },
 					amenities:   { type: [String], default: [] },
 					// Multiple images
 					images: {
@@ -162,11 +162,11 @@ const packageSchema = new mongoose.Schema<IPackage>(
 					},
 					// Legacy single image
 					image:       { url: { type: String }, public_id: { type: String } },
-					price:       { type: Number, required: true },
-					description: { type: String },
-					starRating:  { type: Number, min: 1, max: 5 },
-					checkInDate: { type: String },
-					checkOutDate:{ type: String },
+					price:       { type: Number, default: 0 },
+					description: { type: String, default: "" },
+					starRating:  { type: Number, min: 1, max: 5, default: 3 },
+					checkInDate: { type: String, default: "" },
+					checkOutDate:{ type: String, default: "" },
 				},
 			],
 			default: [],
@@ -176,10 +176,10 @@ const packageSchema = new mongoose.Schema<IPackage>(
 		sightseeings: {
 			type: [
 				{
-					name:        { type: String, required: true },
-					description: { type: String },
-					location:    { type: String },
-					duration:    { type: String },
+					name:        { type: String, default: "" },
+					description: { type: String, default: "" },
+					location:    { type: String, default: "" },
+					duration:    { type: String, default: "" },
 					images: {
 						type: [{ url: { type: String }, public_id: { type: String } }],
 						default: [],

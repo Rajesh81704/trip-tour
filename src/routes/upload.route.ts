@@ -1,7 +1,17 @@
 import express from "express";
-import { getPresignedUrl, getBatchPresignedUrls, deleteUpload, uploadDirect, uploadMulter } from "@/controllers/upload.controller";
+import { getPresignedUrl, getBatchPresignedUrls, deleteUpload, uploadDirect, uploadMulter, serveR2File } from "@/controllers/upload.controller";
 
 const uploadRouter = express.Router();
+
+/**
+ * @swagger
+ * /upload/file/*:
+ *   get:
+ *     summary: Serve an R2 file directly from backend storage
+ *     tags: [Upload]
+ */
+uploadRouter.get("/file/*", serveR2File);
+uploadRouter.get("/file", serveR2File);
 
 /**
  * @swagger

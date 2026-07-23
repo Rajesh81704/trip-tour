@@ -5,7 +5,7 @@ For this to work, the R2 bucket must allow cross-origin PUT requests.
 
 ## How to set it up
 
-1. Go to **Cloudflare Dashboard → R2 → tikito bucket → Settings → CORS policy**
+1. Go to **Cloudflare Dashboard → R2 → trip-tour bucket → Settings → CORS policy**
 2. Click **Add CORS policy** and paste the JSON below:
 
 ```json

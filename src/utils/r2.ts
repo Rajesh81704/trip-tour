@@ -78,6 +78,12 @@ export async function deleteFromR2(key: string): Promise<boolean> {
 	}
 }
 
+// ─── Get an object stream from R2 ─────────────────────────────────────────────
+export async function getObjectFromR2(key: string) {
+	const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });
+	return r2Client.send(command);
+}
+
 // ─── Generate a presigned GET URL (for private buckets — optional) ────────────
 export async function generatePresignedGetUrl(key: string, expiresIn = 3600): Promise<string> {
 	const command = new GetObjectCommand({ Bucket: BUCKET, Key: key });

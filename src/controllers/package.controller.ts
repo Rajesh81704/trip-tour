@@ -14,6 +14,91 @@ function parseField<T>(value: unknown, fallback: T): T {
 	return (value as T) ?? fallback;
 }
 
+function sanitizeFlights(flights: any[]): any[] {
+	if (!Array.isArray(flights)) return [];
+	return flights.map((f) => ({
+		type: f?.type === "internal" ? "internal" : "main",
+		airline: String(f?.airline ?? "").trim(),
+		flightNumber: String(f?.flightNumber ?? "").trim(),
+		departureCity: String(f?.departureCity ?? "").trim(),
+		departureAirport: String(f?.departureAirport ?? "").trim(),
+		departureTime: String(f?.departureTime ?? "").trim(),
+		departureDate: String(f?.departureDate ?? "").trim(),
+		arrivalCity: String(f?.arrivalCity ?? "").trim(),
+		arrivalAirport: String(f?.arrivalAirport ?? "").trim(),
+		arrivalTime: String(f?.arrivalTime ?? "").trim(),
+		arrivalDate: String(f?.arrivalDate ?? "").trim(),
+		duration: String(f?.duration ?? "").trim(),
+		class: ["economy", "business", "first"].includes(f?.class) ? f.class : "economy",
+		price: Number(f?.price) || 0,
+		description: String(f?.description ?? "").trim(),
+		image: f?.image ?? undefined,
+	}));
+}
+
+function sanitizeHotels(hotels: any[]): any[] {
+	if (!Array.isArray(hotels)) return [];
+	return hotels.map((h) => ({
+		location: String(h?.location ?? "").trim(),
+		hotelName: String(h?.hotelName ?? "").trim(),
+		nights: Number(h?.nights) || 1,
+		roomType: String(h?.roomType ?? "").trim(),
+		amenities: Array.isArray(h?.amenities) ? h.amenities.map((a: any) => String(a).trim()).filter(Boolean) : [],
+		images: Array.isArray(h?.images) ? h.images : [],
+		image: h?.image ?? undefined,
+		price: Number(h?.price) || 0,
+		description: String(h?.description ?? "").trim(),
+		starRating: Math.min(5, Math.max(1, Number(h?.starRating) || 3)),
+		checkInDate: String(h?.checkInDate ?? "").trim(),
+		checkOutDate: String(h?.checkOutDate ?? "").trim(),
+	}));
+}
+
+function sanitizeSightseeings(sightseeings: any[]): any[] {
+	if (!Array.isArray(sightseeings)) return [];
+	return sightseeings.map((s) => ({
+		name: String(s?.name ?? "").trim(),
+		description: String(s?.description ?? "").trim(),
+		location: String(s?.location ?? "").trim(),
+		duration: String(s?.duration ?? "").trim(),
+		images: Array.isArray(s?.images) ? s.images : [],
+	}));
+}
+
+function fixImageUrl(img: { url: string; public_id: string }): { url: string; public_id: string } {
+	if (!img) return img;
+	const publicBase = (process.env.R2_PUBLIC_URL ?? "").replace(/\/$/, "");
+	if (img.public_id && (img.url?.includes(".r2.dev") || !img.url?.startsWith("http"))) {
+		return {
+			...img,
+			url: publicBase ? `${publicBase}/${img.public_id}` : `/api/proxy/upload/file/${img.public_id}`,
+		};
+	}
+	return img;
+}
+
+export function fixPackageImages(pkg: any): any {
+	if (!pkg) return pkg;
+	const copy = typeof pkg.toObject === "function" ? pkg.toObject() : { ...pkg };
+	if (Array.isArray(copy.images)) {
+		copy.images = copy.images.map(fixImageUrl);
+	}
+	if (Array.isArray(copy.hotels)) {
+		copy.hotels = copy.hotels.map((h: any) => ({
+			...h,
+			images: Array.isArray(h.images) ? h.images.map(fixImageUrl) : [],
+			image: h.image ? fixImageUrl(h.image) : undefined,
+		}));
+	}
+	if (Array.isArray(copy.sightseeings)) {
+		copy.sightseeings = copy.sightseeings.map((s: any) => ({
+			...s,
+			images: Array.isArray(s.images) ? s.images.map(fixImageUrl) : [],
+		}));
+	}
+	return copy;
+}
+
 // ─── Create ──────────────────────────────────────────────────────────────────
 // Images are already uploaded to R2 by the browser — they arrive as a JSON
 // array of { url, public_id } objects in req.body.images.
@@ -33,9 +118,9 @@ const createPackage = async (req: Request, res: Response): Promise<void> => {
 	const itinerary    = parseField<any[]>(b.itinerary,   []);
 	const inclusions   = parseField<string[]>(b.inclusions,  []);
 	const exclusions   = parseField<string[]>(b.exclusions,  []);
-	const flights      = parseField<any[]>(b.flights,     []);
-	const hotels       = parseField<any[]>(b.hotels,      []);
-	const sightseeings = parseField<any[]>(b.sightseeings,[]);
+	const flights      = sanitizeFlights(parseField<any[]>(b.flights,     []));
+	const hotels       = sanitizeHotels(parseField<any[]>(b.hotels,      []));
+	const sightseeings = sanitizeSightseeings(parseField<any[]>(b.sightseeings,[]));
 	const images       = parseField<{ url: string; public_id: string }[]>(b.images, []);
 
 	// Validation
@@ -116,7 +201,8 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	]);
 
 	res.status(200).json({
-		success: true, packages,
+		success: true,
+		packages: packages.map(fixPackageImages),
 		pagination: {
 			total, page: pageNum, limit: limitNum,
 			pages: Math.ceil(total / limitNum),
@@ -168,7 +254,7 @@ const getPackageById = async (req: Request, res: Response): Promise<void> => {
 	const reviews = await ReviewModel.find({ package: packageId })
 		.populate("user", "name email").sort({ createdAt: -1 });
 
-	res.status(200).json({ success: true, package: packageData, reviews });
+	res.status(200).json({ success: true, package: fixPackageImages(packageData), reviews });
 };
 
 // ─── Popular ──────────────────────────────────────────────────────────────────
@@ -176,7 +262,7 @@ const gettingPopularPackages = async (req: Request, res: Response): Promise<void
 	const limitNum = Math.min(20, Math.max(1, Number(req.query.limit ?? 6)));
 	const packages = await PackageModel.find()
 		.sort({ viewCount: -1, createdAt: -1 }).limit(limitNum).lean();
-	res.status(200).json({ success: true, packages });
+	res.status(200).json({ success: true, packages: packages.map(fixPackageImages) });
 };
 
 // ─── Update ───────────────────────────────────────────────────────────────────
@@ -204,9 +290,9 @@ const updatePackage = async (req: Request, res: Response): Promise<void> => {
 		itinerary:    parseField(b.itinerary,    existing.itinerary),
 		inclusions:   parseField(b.inclusions,   existing.inclusions),
 		exclusions:   parseField(b.exclusions,   existing.exclusions),
-		flights:      parseField(b.flights,      existing.flights ?? []),
-		hotels:       parseField(b.hotels,       existing.hotels  ?? []),
-		sightseeings: parseField(b.sightseeings, (existing as any).sightseeings ?? []),
+		flights:      sanitizeFlights(parseField(b.flights,      existing.flights ?? [])),
+		hotels:       sanitizeHotels(parseField(b.hotels,       existing.hotels  ?? [])),
+		sightseeings: sanitizeSightseeings(parseField(b.sightseeings, (existing as any).sightseeings ?? [])),
 		// Images: use incoming if provided, otherwise keep existing
 		images:       parseField<{ url: string; public_id: string }[]>(
 						b.images, null as any
