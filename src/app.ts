@@ -1,3 +1,7 @@
+// Fix for Node 16 Web Crypto API support (AWS SDK v3)
+const { webcrypto } = require("crypto");
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { Request, Response } from "express";
