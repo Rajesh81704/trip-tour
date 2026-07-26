@@ -287,16 +287,12 @@ if (!process.env.VERCEL) {
 // VERCEL=1 is set automatically by Vercel — skip listen() there (serverless)
 // On Render and local dev, always start the HTTP server
 if (!process.env.VERCEL) {
-	connectDB()
-		.then(() => {
-			app.listen(PORT, () => {
-				logger.info(`Server is running on http://localhost:${PORT}`);
-			});
-		})
-		.catch((error) => {
-			logger.error("Failed to connect to the database:", error);
-			process.exit(1);
-		});
+	app.listen(PORT, () => {
+		logger.info(`Server is running on http://localhost:${PORT}`);
+	});
+	connectDB().catch((error) => {
+		logger.error("Failed to connect to the database:", error);
+	});
 }
 
 // Export for Vercel serverless

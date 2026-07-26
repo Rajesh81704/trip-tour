@@ -1,11 +1,11 @@
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { ErrorHandler } from "@/middlewares/error-handler.middleware";
 import { IUser, UserModel } from "@/models/user.model";
 
-async function getUser(req: Request, res: Response) {
+async function getUser(req: Request, res: Response, next: NextFunction) {
 	try {
 		const reqUser = req.user as IUser;
-		if (!reqUser.id) {
+		if (!reqUser || !reqUser.id) {
 			return res.status(401).json({ message: "Unauthorized: No user ID found" });
 		}
 		const user = await UserModel.findById(reqUser.id).select("-password -__v");
@@ -24,9 +24,9 @@ async function getUser(req: Request, res: Response) {
 		});
 	} catch (error) {
 		if (error instanceof Error) {
-			throw new ErrorHandler(400, error.message);
+			return next(new ErrorHandler(400, error.message));
 		}
-		throw new ErrorHandler(500, "Internal server error");
+		return next(new ErrorHandler(500, "Internal server error"));
 	}
 }
 

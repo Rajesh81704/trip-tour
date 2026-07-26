@@ -196,7 +196,16 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	const skip     = (pageNum - 1) * limitNum;
 
 	const [packages, total] = await Promise.all([
-		PackageModel.find(filter).sort(sort).skip(skip).limit(limitNum).lean(),
+		PackageModel.find(filter)
+			.sort(sort)
+			.skip(skip)
+			.limit(limitNum)
+			.populate({
+				path: "reviews",
+				select: "rating comment user createdAt",
+				populate: { path: "user", select: "name email avatar" },
+			})
+			.lean(),
 		PackageModel.countDocuments(filter),
 	]);
 
