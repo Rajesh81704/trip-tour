@@ -154,12 +154,26 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 	} = req.query as Record<string, string>;
 
 	const filter: Record<string, any> = {};
+	const conditions: Record<string, any>[] = [];
 
-	if (state)       filter["location.state"]       = { $regex: new RegExp(state.replace(/-/g, " "), "i") };
-	if (city)        filter["location.city"]         = { $regex: new RegExp(city.replace(/-/g, " "), "i") };
-	if (destination) filter["location.destination"]  = { $regex: new RegExp(destination.replace(/-/g, " "), "i") };
-	if (category && category !== "all")
+	// Search across destination, state, city, and title for any location filter (e.g. ?state=Phuket-Krabi or ?destination=Phuket-Krabi)
+	const locationParam = state || destination || city;
+	if (locationParam) {
+		const locPattern = locationParam.replace(/[-\s]+/g, ".*");
+		const locRegex = new RegExp(locPattern, "i");
+		conditions.push({
+			$or: [
+				{ "location.destination": { $regex: locRegex } },
+				{ "location.state":       { $regex: locRegex } },
+				{ "location.city":        { $regex: locRegex } },
+				{ title:                  { $regex: locRegex } },
+			],
+		});
+	}
+
+	if (category && category !== "all") {
 		filter.category = { $regex: new RegExp(category.replace(/-/g, " "), "i") };
+	}
 
 	if (minPrice || maxPrice) {
 		filter.price = {};
@@ -175,13 +189,24 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 
 	if (search) {
 		const r = new RegExp(search.replace(/[-\s]+/g, ".*"), "i");
-		filter.$or = [
-			{ title: { $regex: r } }, { description: { $regex: r } },
-			{ "location.state": { $regex: r } }, { "location.city": { $regex: r } },
-			{ "location.destination": { $regex: r } }, { category: { $regex: r } },
-			{ features: { $regex: r } }, { highlights: { $regex: r } },
-			{ "itinerary.title": { $regex: r } }, { inclusions: { $regex: r } },
-		];
+		conditions.push({
+			$or: [
+				{ title:                  { $regex: r } },
+				{ description:            { $regex: r } },
+				{ "location.state":       { $regex: r } },
+				{ "location.city":        { $regex: r } },
+				{ "location.destination": { $regex: r } },
+				{ category:               { $regex: r } },
+				{ features:               { $regex: r } },
+				{ highlights:             { $regex: r } },
+				{ "itinerary.title":      { $regex: r } },
+				{ inclusions:             { $regex: r } },
+			],
+		});
+	}
+
+	if (conditions.length > 0) {
+		filter.$and = conditions;
 	}
 
 	const sortMap: Record<string, Record<string, 1 | -1>> = {
@@ -223,9 +248,10 @@ const getAllPackages = async (req: Request, res: Response): Promise<void> => {
 
 // ─── Filter Meta ─────────────────────────────────────────────────────────────
 const getFilterMeta = async (_req: Request, res: Response): Promise<void> => {
-	const [categories, states, priceRange] = await Promise.all([
+	const [categories, states, destinations, priceRange] = await Promise.all([
 		PackageModel.distinct("category"),
 		PackageModel.distinct("location.state"),
+		PackageModel.distinct("location.destination"),
 		PackageModel.aggregate([{
 			$group: {
 				_id: null,
@@ -235,11 +261,13 @@ const getFilterMeta = async (_req: Request, res: Response): Promise<void> => {
 		}]),
 	]);
 
+	const allLocations = Array.from(new Set([...states, ...destinations].filter(Boolean))).sort();
+
 	res.status(200).json({
 		success: true,
 		filters: {
 			categories: categories.filter(Boolean).sort(),
-			states:     states.filter(Boolean).sort(),
+			states:     allLocations,
 			priceRange: priceRange[0]
 				? { min: priceRange[0].minPrice, max: priceRange[0].maxPrice,
 				    minDays: priceRange[0].minDays, maxDays: priceRange[0].maxDays }
