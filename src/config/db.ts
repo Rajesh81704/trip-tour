@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import { logger } from "@/utils/logger";
 
-const connectDB = async (): Promise<typeof mongoose> => {
-	// Reuse existing connection (important for serverless warm invocations)
+const connectDB = async (retries = 3): Promise<typeof mongoose> => {
+	// Reuse existing connection
 	if (mongoose.connection.readyState >= 1) {
 		return mongoose;
 	}
@@ -11,14 +11,22 @@ const connectDB = async (): Promise<typeof mongoose> => {
 		throw new Error("MONGODB_URI is not defined in environment variables");
 	}
 
-	try {
-		const connection = await mongoose.connect(process.env.MONGODB_URI);
-		logger.info("Connected to MongoDB");
-		return connection;
-	} catch (error) {
-		logger.error("Error connecting to MongoDB:", error);
-		throw error;
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			const connection = await mongoose.connect(process.env.MONGODB_URI, {
+				serverSelectionTimeoutMS: 5000,
+			});
+			logger.info("Connected to MongoDB successfully");
+			return connection;
+		} catch (error) {
+			logger.error(`Error connecting to MongoDB (Attempt ${attempt}/${retries}):`, error);
+			if (attempt < retries) {
+				await new Promise((resolve) => setTimeout(resolve, 2000));
+			}
+		}
 	}
+
+	throw new Error("Could not connect to MongoDB after multiple attempts");
 };
 
 export { connectDB };

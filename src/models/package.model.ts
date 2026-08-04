@@ -164,7 +164,7 @@ const packageSchema = new mongoose.Schema<IPackage>(
 					image:       { url: { type: String }, public_id: { type: String } },
 					price:       { type: Number, default: 0 },
 					description: { type: String, default: "" },
-					starRating:  { type: Number, min: 1, max: 5, default: 3 },
+					starRating:  { type: Number, min: 1, max: 7, default: 3 },
 					checkInDate: { type: String, default: "" },
 					checkOutDate:{ type: String, default: "" },
 				},

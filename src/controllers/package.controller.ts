@@ -48,7 +48,7 @@ function sanitizeHotels(hotels: any[]): any[] {
 		image: h?.image ?? undefined,
 		price: Number(h?.price) || 0,
 		description: String(h?.description ?? "").trim(),
-		starRating: Math.min(5, Math.max(1, Number(h?.starRating) || 3)),
+		starRating: Math.min(7, Math.max(1, Number(h?.starRating) || 3)),
 		checkInDate: String(h?.checkInDate ?? "").trim(),
 		checkOutDate: String(h?.checkOutDate ?? "").trim(),
 	}));

@@ -33,6 +33,7 @@ import reviewRouter from "@/routes/review.route";
 import userRouter from "@/routes/user.route";
 import uploadRouter from "@/routes/upload.route";
 import visaRouter from "@/routes/visa.route";
+import presetRouter from "@/routes/preset.route";
 
 import cron from "node-cron";
 import https from "https";
@@ -104,6 +105,20 @@ app.get("/health", (_req: Request, res: Response) => {
 	res.status(200).json({ message: "Server is healthy" });
 });
 
+// Middleware to ensure Database is connected before executing model queries
+app.use(async (req: Request, res: Response, next) => {
+	if (req.path === "/" || req.path === "/health" || req.path.startsWith("/api-docs")) {
+		return next();
+	}
+	try {
+		await connectDB();
+		next();
+	} catch (err) {
+		logger.error("DB connection error on request:", err);
+		res.status(503).json({ message: "Database connection unavailable. Retrying..." });
+	}
+});
+
 app.use("/auth", authRouter);
 app.use("/users", userRouter);
 app.use("/packages", packageRouter);
@@ -114,6 +129,7 @@ app.use("/reviews", reviewRouter);
 app.use("/admin", adminRouter);
 app.use("/upload", uploadRouter);
 app.use("/visa", visaRouter);
+app.use("/presets", presetRouter);
 
 /**
  * @swagger
