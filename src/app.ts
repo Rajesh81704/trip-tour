@@ -56,10 +56,7 @@ const app = express();
 app.use(loggerMiddleware);
 
 const corsOptions: cors.CorsOptions = {
-	origin: (origin, callback) => {
-		// Allow all origins (reflect request origin) or requests with no origin (mobile/curl)
-		callback(null, true);
-	},
+	origin: true,
 	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 	allowedHeaders: [
 		"Content-Type",
