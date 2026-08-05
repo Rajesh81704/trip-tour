@@ -11,6 +11,14 @@ const options: swaggerJsdoc.Options = {
 		},
 		servers: [
 			{
+				url: "/",
+				description: "Current Server (Relative)",
+			},
+			{
+				url: "http://103.138.96.92:8000",
+				description: "Live VPS Server",
+			},
+			{
 				url: "http://localhost:8000",
 				description: "Local Development Server",
 			},
