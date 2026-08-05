@@ -55,13 +55,30 @@ const app = express();
 
 app.use(loggerMiddleware);
 
-app.use(
-	cors({
-		origin: true,
-		methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-		credentials: true,
-	}),
-);
+const corsOptions: cors.CorsOptions = {
+	origin: (origin, callback) => {
+		// Allow all origins (reflect request origin) or requests with no origin (mobile/curl)
+		callback(null, true);
+	},
+	methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+	allowedHeaders: [
+		"Content-Type",
+		"Authorization",
+		"Cookie",
+		"X-Requested-With",
+		"Accept",
+		"Origin",
+		"Access-Control-Allow-Headers",
+		"Access-Control-Request-Method",
+		"Access-Control-Request-Headers",
+	],
+	exposedHeaders: ["Set-Cookie"],
+	credentials: true,
+	optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
